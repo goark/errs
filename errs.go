@@ -71,13 +71,8 @@ func (e *Error) Is(target error) bool {
 		return true
 	}
 	cause := Cause(target)
-	if cause != target {
-		if errors.Is(e, cause) {
-			return true
-		}
-		if e.Err != nil && errors.Is(Cause(e), cause) {
-			return true
-		}
+	if cause != target && errors.Is(e, cause) {
+		return true
 	}
 	return false
 }
