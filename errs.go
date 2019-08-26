@@ -16,16 +16,19 @@ type Error struct {
 	Params map[string]string
 }
 
-//ErrorParamsOptFunc is self-referential function for functional options pattern
-type ErrorParamsOptFunc func(*Error)
+//ErrorParamsFunc is self-referential function for functional options pattern
+type ErrorParamsFunc func(*Error)
 
 //New returns new Error instance
-func New(msg string, opts ...ErrorParamsOptFunc) error {
+func New(msg string, opts ...ErrorParamsFunc) error {
+	if len(msg) == 0 {
+		return nil
+	}
 	return newError(nil, msg, 2, opts...)
 }
 
 //Wrap returns wrapping error instance
-func Wrap(err error, msg string, opts ...ErrorParamsOptFunc) error {
+func Wrap(err error, msg string, opts ...ErrorParamsFunc) error {
 	if err == nil {
 		return nil
 	}
@@ -33,7 +36,7 @@ func Wrap(err error, msg string, opts ...ErrorParamsOptFunc) error {
 }
 
 //newError returns error instance (internal)
-func newError(err error, msg string, depth int, opts ...ErrorParamsOptFunc) error {
+func newError(err error, msg string, depth int, opts ...ErrorParamsFunc) error {
 	we := &Error{Msg: msg, Cause: err, Params: map[string]string{}}
 	//caller function name
 	if fname, _, _ := caller(depth); len(fname) > 0 {
@@ -47,7 +50,7 @@ func newError(err error, msg string, depth int, opts ...ErrorParamsOptFunc) erro
 }
 
 //WithScheme returns function for setting scheme
-func WithParam(name, value string) ErrorParamsOptFunc {
+func WithParam(name, value string) ErrorParamsFunc {
 	return func(e *Error) {
 		e.SetParam(name, value)
 	}

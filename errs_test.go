@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+var nilErr = New("")
 var errTest = New("\"Error\" for test")
 var wrapedErrTest = Wrap(errTest, "")
 
@@ -17,7 +18,7 @@ func TestWrap(t *testing.T) {
 		msg  string
 		json string
 	}{
-		{err: nil, msg: "<nil>", json: "<nil>"},
+		{err: nilErr, msg: "<nil>", json: "<nil>"},
 		{err: os.ErrInvalid, msg: "wrapped message: invalid argument", json: `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`},
 		{err: errTest, msg: "wrapped message: \"Error\" for test", json: `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`},
 		{err: wrapedErrTest, msg: "wrapped message: \"Error\" for test", json: `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`},
