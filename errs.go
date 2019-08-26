@@ -6,26 +6,37 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 //Error is wrapper error class
 type Error struct {
 	Msg    string
-	Err    error
+	Cause  error
 	Params map[string]string
 }
 
 //ErrorParamsOptFunc is self-referential function for functional options pattern
 type ErrorParamsOptFunc func(*Error)
 
+//New returns new Error instance
+func New(msg string, opts ...ErrorParamsOptFunc) error {
+	return newError(nil, msg, 2, opts...)
+}
+
 //Wrap returns wrapping error instance
 func Wrap(err error, msg string, opts ...ErrorParamsOptFunc) error {
 	if err == nil {
 		return nil
 	}
-	we := &Error{Msg: msg, Err: err, Params: map[string]string{}}
+	return newError(err, msg, 2, opts...)
+}
+
+//newError returns error instance (internal)
+func newError(err error, msg string, depth int, opts ...ErrorParamsOptFunc) error {
+	we := &Error{Msg: msg, Cause: err, Params: map[string]string{}}
 	//caller function name
-	if fname, _, _ := caller(); len(fname) > 0 {
+	if fname, _, _ := caller(depth); len(fname) > 0 {
 		we.SetParam("function", fname)
 	}
 	//other params
@@ -59,14 +70,11 @@ func (e *Error) Unwrap() error {
 	if e == nil {
 		return nil
 	}
-	return e.Err
+	return e.Cause
 }
 
 //Is method for errors.Is function
 func (e *Error) Is(target error) bool {
-	if e == nil || target == nil {
-		return e == target
-	}
 	if e == target {
 		return true
 	}
@@ -79,13 +87,13 @@ func (e *Error) Is(target error) bool {
 
 //Error returns message string of Error
 func (e *Error) Error() string {
-	if e == nil {
-		return ""
+	if e.Cause == nil {
+		return e.Msg
 	}
 	if len(e.Msg) == 0 {
-		return e.Err.Error()
+		return e.Cause.Error()
 	}
-	return fmt.Sprintf("%v: %v", e.Msg, e.Err)
+	return fmt.Sprintf("%v: %v", e.Msg, e.Cause)
 }
 
 //String returns message string of Error
@@ -95,22 +103,18 @@ func (e *Error) String() string {
 
 //JSON returns string with JSON format
 func (e *Error) JSON() string {
-	msg := strconv.Quote(e.Msg)
-	parms := ""
+	elms := []string{}
+	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", e))))
+	elms = append(elms, fmt.Sprintf(`"Msg":%s`, strconv.Quote(e.Error())))
 	if len(e.Params) > 0 {
 		if b, err := json.Marshal(e.Params); err == nil {
-			parms = string(b)
+			elms = append(elms, fmt.Sprintf(`"Params":%s`, string(b)))
 		}
 	}
-	cause := fmt.Sprintf(`{"Msg":%s}`, strconv.Quote(e.Err.Error()))
-	var ee *Error
-	if errors.As(e.Err, &ee) {
-		cause = ee.JSON()
+	if e.Cause != nil {
+		elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(e.Cause)))
 	}
-	if len(parms) == 0 {
-		return fmt.Sprintf(`{"Msg":%s,"Cause":%s}`, msg, cause)
-	}
-	return fmt.Sprintf(`{"Msg":%s,"Cause":%s,"Params":%s}`, msg, cause, parms)
+	return "{" + strings.Join(elms, ",") + "}"
 }
 
 //Format formats Error instance
@@ -128,15 +132,6 @@ func (e *Error) Format(s fmt.State, verb rune) {
 	}
 }
 
-//caller returns caller info.
-func caller() (string, string, int) {
-	pc, src, line, ok := runtime.Caller(2)
-	if !ok {
-		return "", "", 0
-	}
-	return runtime.FuncForPC(pc).Name(), src, line
-}
-
 //Cause returns cause error instance
 func Cause(err error) error {
 	for {
@@ -146,6 +141,46 @@ func Cause(err error) error {
 		}
 		err = unwraped
 	}
+}
+
+//EncodeJSON dumps out error instance with JSON format
+func EncodeJSON(err error) string {
+	switch e := err.(type) {
+	case *Error:
+		return e.JSON()
+	default:
+		return encodeJSON(err)
+	}
+}
+
+//caller returns caller info.
+func caller(depth int) (string, string, int) {
+	pc, src, line, ok := runtime.Caller(depth + 1)
+	if !ok {
+		return "", "", 0
+	}
+	return runtime.FuncForPC(pc).Name(), src, line
+}
+
+func encodeJSON(err error) string {
+	if err == nil {
+		return "null"
+	}
+	elms := []string{}
+	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", err))))
+	elms = append(elms, fmt.Sprintf(`"Msg":%s`, strconv.Quote(err.Error())))
+	unwraped := errors.Unwrap(err)
+	if unwraped != nil {
+		cause := `{}`
+		switch e := unwraped.(type) {
+		case *Error:
+			cause = e.JSON()
+		default:
+			cause = encodeJSON(unwraped)
+		}
+		elms = append(elms, fmt.Sprintf(`"Cause":%s`, cause))
+	}
+	return "{" + strings.Join(elms, ",") + "}"
 }
 
 /* Copyright 2019 Spiegel
