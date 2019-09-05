@@ -1,34 +1,198 @@
 package errs
 
 import (
-	errors "golang.org/x/xerrors"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"runtime"
+	"strconv"
+	"strings"
 )
 
-//Is function is compatible with errors.Is function.
-func Is(err, target error) bool {
-	if err == nil || target == nil {
-		return err == target
-	}
-	return errors.Is(err, target)
+//Error is wrapper error class
+type Error struct {
+	Msg    string
+	Cause  error
+	Params map[string]string
 }
 
-//As function is compatible with errors.As function.
-func As(err error, target interface{}) bool {
+//ErrorParamsFunc is self-referential function for functional options pattern
+type ErrorParamsFunc func(*Error)
+
+//New returns new Error instance
+func New(msg string, opts ...ErrorParamsFunc) error {
+	if len(msg) == 0 {
+		return nil
+	}
+	return newError(nil, msg, 2, opts...)
+}
+
+//Wrap returns wrapping error instance
+func Wrap(err error, msg string, opts ...ErrorParamsFunc) error {
 	if err == nil {
-		return false
+		return nil
 	}
-	return errors.As(err, target)
+	return newError(err, msg, 2, opts...)
 }
 
-//Cause returns cause error in target error
+//newError returns error instance (internal)
+func newError(err error, msg string, depth int, opts ...ErrorParamsFunc) error {
+	we := &Error{Msg: msg, Cause: err}
+	//caller function name
+	if fname, _, _ := caller(depth); len(fname) > 0 {
+		we.SetParam("function", fname)
+	}
+	//other params
+	for _, opt := range opts {
+		opt(we)
+	}
+	return we
+}
+
+//WithScheme returns function for setting scheme
+func WithParam(name, value string) ErrorParamsFunc {
+	return func(e *Error) {
+		e.SetParam(name, value)
+	}
+}
+
+//SetParam sets parameter to Error instance
+func (e *Error) SetParam(name, value string) {
+	if e == nil {
+		return
+	}
+	if e.Params == nil {
+		e.Params = map[string]string{}
+	}
+	if len(name) > 0 {
+		e.Params[name] = value
+	}
+	return
+}
+
+//Unwrap method for errors.Unwrap function
+func (e *Error) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Cause
+}
+
+//Is method for errors.Is function
+func (e *Error) Is(target error) bool {
+	if e == target {
+		return true
+	}
+	cause := Cause(target)
+	if cause != target && errors.Is(e, cause) {
+		return true
+	}
+	return false
+}
+
+//Error returns message string of Error
+func (e *Error) Error() string {
+	if e.Cause == nil {
+		return e.Msg
+	}
+	if len(e.Msg) == 0 {
+		return e.Cause.Error()
+	}
+	return fmt.Sprintf("%v: %v", e.Msg, e.Cause)
+}
+
+//String returns message string of Error
+func (e *Error) String() string {
+	return e.Error()
+}
+
+//String returns message string of Error
+func (e *Error) GoString() string {
+	return fmt.Sprintf("errs.Error{Msg:%v, Params:%#v, Cause:%#v}", strconv.Quote(e.Msg), e.Params, e.Cause)
+}
+
+//JSON returns string with JSON format
+func (e *Error) JSON() string {
+	elms := []string{}
+	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", e))))
+	elms = append(elms, fmt.Sprintf(`"Msg":%s`, strconv.Quote(e.Error())))
+	if len(e.Params) > 0 {
+		if b, err := json.Marshal(e.Params); err == nil {
+			elms = append(elms, fmt.Sprintf(`"Params":%s`, string(b)))
+		}
+	}
+	if e.Cause != nil {
+		elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(e.Cause)))
+	}
+	return "{" + strings.Join(elms, ",") + "}"
+}
+
+//Format formats Error instance
+func (e *Error) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		switch {
+		case s.Flag('#'):
+			s.Write([]byte(e.GoString()))
+		case s.Flag('+'):
+			s.Write([]byte(e.JSON()))
+		default:
+			s.Write([]byte(e.Error()))
+		}
+	case 's':
+		s.Write([]byte(e.Error()))
+	}
+}
+
+//Cause returns cause error instance
 func Cause(err error) error {
 	for {
-		unwrap := errors.Unwrap(err)
-		if unwrap == nil {
+		unwraped := errors.Unwrap(err)
+		if unwraped == nil {
 			return err
 		}
-		err = unwrap
+		err = unwraped
 	}
+}
+
+//EncodeJSON dumps out error instance with JSON format
+func EncodeJSON(err error) string {
+	switch e := err.(type) {
+	case *Error:
+		return e.JSON()
+	default:
+		return encodeJSON(err)
+	}
+}
+
+//caller returns caller info.
+func caller(depth int) (string, string, int) {
+	pc, src, line, ok := runtime.Caller(depth + 1)
+	if !ok {
+		return "", "", 0
+	}
+	return runtime.FuncForPC(pc).Name(), src, line
+}
+
+func encodeJSON(err error) string {
+	if err == nil {
+		return "null"
+	}
+	elms := []string{}
+	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", err))))
+	elms = append(elms, fmt.Sprintf(`"Msg":%s`, strconv.Quote(err.Error())))
+	unwraped := errors.Unwrap(err)
+	if unwraped != nil {
+		cause := `{}`
+		switch e := unwraped.(type) {
+		case *Error:
+			cause = e.JSON()
+		default:
+			cause = encodeJSON(unwraped)
+		}
+		elms = append(elms, fmt.Sprintf(`"Cause":%s`, cause))
+	}
+	return "{" + strings.Join(elms, ",") + "}"
 }
 
 /* Copyright 2019 Spiegel

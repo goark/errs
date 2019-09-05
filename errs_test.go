@@ -1,65 +1,95 @@
 package errs
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"syscall"
 	"testing"
 )
 
-type testError string
-
-func (e testError) Error() string {
-	return string(e)
-}
-
-var errTest = testError("Error for test")
-var errTestAnother = testError("Error for test (another instance)")
+var nilErr = New("")
+var errTest = New("\"Error\" for test")
+var wrapedErrTest = Wrap(errTest, "")
 
 func TestWrap(t *testing.T) {
 	testCases := []struct {
-		err error
-		msg string
+		err    error
+		msg    string
+		detail string
+		json   string
 	}{
-		{err: errTest, msg: "wrapped message: " + string(errTest)},
+		{
+			err:    nilErr,
+			msg:    "<nil>",
+			detail: "<nil>",
+			json:   "<nil>",
+		},
+		{
+			err:    os.ErrInvalid,
+			msg:    "wrapped message: invalid argument",
+			detail: `errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}}`,
+			json:   `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
+		},
+		{
+			err:    errTest,
+			msg:    "wrapped message: \"Error\" for test",
+			detail: `errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
+			json:   `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
+		},
+		{
+			err:    wrapedErrTest,
+			msg:    "wrapped message: \"Error\" for test",
+			detail: `errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:errs.Error{Msg:"", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
+			json:   `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
+		},
 	}
 
 	for _, tc := range testCases {
-		err := Wrap(tc.err, "wrapped message")
-		str := err.Error()
+		err := Wrap(tc.err, "wrapped message", WithParam("foo", "bar"))
+		str := fmt.Sprintf("%v", err)
 		if str != tc.msg {
 			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
 		}
-		fmt.Printf("Info: %+v\n", err)
-
-		err = Wrapf(tc.err, "%s", "wrapped message")
-		str = err.Error()
-		if str != tc.msg {
-			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
+		str = fmt.Sprintf("%#v", err)
+		if str != tc.detail {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.detail)
 		}
-		fmt.Printf("Info: %+v\n", err)
+		str = fmt.Sprintf("%+v", err)
+		if str != tc.json {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.json)
+		}
+		if err != nil {
+			str = EncodeJSON(err)
+			if str != tc.json {
+				t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.json)
+			}
+		}
 	}
 }
 
 func TestIs(t *testing.T) {
 	testCases := []struct {
-		err   error
-		res   bool
-		cause error
+		err    error
+		res    bool
+		target error
 	}{
-		{err: nil, res: true, cause: nil},
-		{err: Wrap(nil, ""), res: true, cause: nil},
-		{err: Wrapf(nil, "%s", "no error"), res: true, cause: nil},
-		{err: nil, res: false, cause: errTest},
-		{err: errTest, res: false, cause: nil},
-		{err: errTest, res: true, cause: errTest},
-		{err: errTest, res: false, cause: errTestAnother},
-		{err: Wrap(errTest, "wrapped error"), res: true, cause: errTest},
-		{err: Wrapf(errTest, "%s", "wrapped error"), res: true, cause: errTest},
-		{err: Wrap(errTest, "wrapped error"), res: false, cause: errTestAnother},
+		{err: nil, res: true, target: nil},
+		{err: New("error"), res: false, target: nil},
+		{err: Wrap(nil, ""), res: true, target: nil},
+		{err: nil, res: false, target: errTest},
+		{err: errTest, res: false, target: nil},
+		{err: errTest, res: true, target: errTest},
+		{err: errTest, res: false, target: os.ErrInvalid},
+		{err: Wrap(os.ErrInvalid, "wrapped error"), res: true, target: os.ErrInvalid},
+		{err: Wrap(os.ErrInvalid, "wrapped error"), res: false, target: errTest},
+		{err: Wrap(errTest, "wrapped error"), res: true, target: errTest},
+		{err: Wrap(errTest, "wrapped error"), res: true, target: wrapedErrTest},
+		{err: Wrap(errTest, "wrapped error"), res: false, target: os.ErrInvalid},
 	}
 
 	for _, tc := range testCases {
-		if ok := Is(tc.err, tc.cause); ok != tc.res {
+		if ok := errors.Is(tc.err, tc.target); ok != tc.res {
 			t.Errorf("result if Is(\"%v\") is %v, want %v", tc.err, ok, tc.res)
 		}
 	}
@@ -72,13 +102,12 @@ func TestAs(t *testing.T) {
 		cause error
 	}{
 		{err: nil, res: false, cause: nil},
-		{err: errTest, res: true, cause: errTest},
-		{err: Wrap(errTest, "wrapping error"), res: true, cause: errTest},
+		{err: Wrap(syscall.ENOENT, "wrapping error"), res: true, cause: syscall.ENOENT},
 	}
 
 	for _, tc := range testCases {
-		var cs testError
-		if ok := As(tc.err, &cs); ok != tc.res {
+		var cs syscall.Errno
+		if ok := errors.As(tc.err, &cs); ok != tc.res {
 			t.Errorf("result if As(\"%v\") is %v, want %v", tc.err, ok, tc.res)
 			if ok && cs != tc.cause {
 				t.Errorf("As(\"%v\") = \"%v\", want \"%v\"", tc.err, cs, tc.cause)
@@ -87,31 +116,28 @@ func TestAs(t *testing.T) {
 	}
 }
 
-func TestCause(t *testing.T) {
-	testCases := []struct {
-		err   error
-		cause error
-	}{
-		{err: nil, cause: nil},
-		{err: errTest, cause: errTest},
-		{err: Wrap(errTest, "wrapping error"), cause: errTest},
+func checkFileOpen(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return Wrap(
+			err,
+			"file open error",
+			WithParam("path", path),
+		)
 	}
+	defer file.Close()
 
-	for _, tc := range testCases {
-		res := Cause(tc.err)
-		if res != tc.cause {
-			t.Errorf("Cause in \"%v\" == \"%v\", want \"%v\"", tc.err, res, tc.cause)
-		}
-	}
+	return nil
 }
 
-func ExampleWrap() {
-	err := Wrap(os.ErrInvalid, "wrapped message")
-	fmt.Println(err)
-	fmt.Printf("errs.Cause(err): %v\n", Cause(err))
+func ExampleErrs() {
+	var lastErr error
+	if err := checkFileOpen("not-exist.txt"); err != nil {
+		lastErr = fmt.Errorf("detect error!: %w", err)
+	}
+	fmt.Printf("%+v\n", Wrap(lastErr, ""))
 	// Output:
-	// wrapped message: invalid argument
-	// errs.Cause(err): invalid argument
+	// {"Type":"*errs.Error","Msg":"detect error!: file open error: open not-exist.txt: no such file or directory","Params":{"function":"github.com/spiegel-im-spiegel/errs.ExampleErrs"},"Cause":{"Type":"*fmt.wrapError","Msg":"detect error!: file open error: open not-exist.txt: no such file or directory","Cause":{"Type":"*errs.Error","Msg":"file open error: open not-exist.txt: no such file or directory","Params":{"function":"github.com/spiegel-im-spiegel/errs.checkFileOpen","path":"not-exist.txt"},"Cause":{"Type":"*os.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}}}}}
 }
 
 /* Copyright 2019 Spiegel
