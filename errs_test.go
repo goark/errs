@@ -14,14 +14,35 @@ var wrapedErrTest = Wrap(errTest, "")
 
 func TestWrap(t *testing.T) {
 	testCases := []struct {
-		err  error
-		msg  string
-		json string
+		err    error
+		msg    string
+		detail string
+		json   string
 	}{
-		{err: nilErr, msg: "<nil>", json: "<nil>"},
-		{err: os.ErrInvalid, msg: "wrapped message: invalid argument", json: `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`},
-		{err: errTest, msg: "wrapped message: \"Error\" for test", json: `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`},
-		{err: wrapedErrTest, msg: "wrapped message: \"Error\" for test", json: `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`},
+		{
+			err:    nilErr,
+			msg:    "<nil>",
+			detail: "<nil>",
+			json:   "<nil>",
+		},
+		{
+			err:    os.ErrInvalid,
+			msg:    "wrapped message: invalid argument",
+			detail: `errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}}`,
+			json:   `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
+		},
+		{
+			err:    errTest,
+			msg:    "wrapped message: \"Error\" for test",
+			detail: `errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
+			json:   `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
+		},
+		{
+			err:    wrapedErrTest,
+			msg:    "wrapped message: \"Error\" for test",
+			detail: `errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:errs.Error{Msg:"", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
+			json:   `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -31,8 +52,8 @@ func TestWrap(t *testing.T) {
 			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
 		}
 		str = fmt.Sprintf("%#v", err)
-		if str != tc.json {
-			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.json)
+		if str != tc.detail {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.detail)
 		}
 		str = fmt.Sprintf("%+v", err)
 		if str != tc.json {
@@ -93,6 +114,30 @@ func TestAs(t *testing.T) {
 			}
 		}
 	}
+}
+
+func checkFileOpen(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return Wrap(
+			err,
+			"file open error",
+			WithParam("path", path),
+		)
+	}
+	defer file.Close()
+
+	return nil
+}
+
+func ExampleErrs() {
+	var lastErr error
+	if err := checkFileOpen("not-exist.txt"); err != nil {
+		lastErr = fmt.Errorf("detect error!: %w", err)
+	}
+	fmt.Printf("%+v\n", Wrap(lastErr, ""))
+	// Output:
+	// {"Type":"*errs.Error","Msg":"detect error!: file open error: open not-exist.txt: no such file or directory","Params":{"function":"github.com/spiegel-im-spiegel/errs.ExampleErrs"},"Cause":{"Type":"*fmt.wrapError","Msg":"detect error!: file open error: open not-exist.txt: no such file or directory","Cause":{"Type":"*errs.Error","Msg":"file open error: open not-exist.txt: no such file or directory","Params":{"function":"github.com/spiegel-im-spiegel/errs.checkFileOpen","path":"not-exist.txt"},"Cause":{"Type":"*os.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}}}}}
 }
 
 /* Copyright 2019 Spiegel

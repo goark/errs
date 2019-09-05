@@ -37,7 +37,7 @@ func Wrap(err error, msg string, opts ...ErrorParamsFunc) error {
 
 //newError returns error instance (internal)
 func newError(err error, msg string, depth int, opts ...ErrorParamsFunc) error {
-	we := &Error{Msg: msg, Cause: err, Params: map[string]string{}}
+	we := &Error{Msg: msg, Cause: err}
 	//caller function name
 	if fname, _, _ := caller(depth); len(fname) > 0 {
 		we.SetParam("function", fname)
@@ -64,7 +64,9 @@ func (e *Error) SetParam(name, value string) {
 	if e.Params == nil {
 		e.Params = map[string]string{}
 	}
-	e.Params[name] = value
+	if len(name) > 0 {
+		e.Params[name] = value
+	}
 	return
 }
 
@@ -104,6 +106,11 @@ func (e *Error) String() string {
 	return e.Error()
 }
 
+//String returns message string of Error
+func (e *Error) GoString() string {
+	return fmt.Sprintf("errs.Error{Msg:%v, Params:%#v, Cause:%#v}", strconv.Quote(e.Msg), e.Params, e.Cause)
+}
+
 //JSON returns string with JSON format
 func (e *Error) JSON() string {
 	elms := []string{}
@@ -125,13 +132,15 @@ func (e *Error) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		switch {
-		case s.Flag('#'), s.Flag('+'):
+		case s.Flag('#'):
+			s.Write([]byte(e.GoString()))
+		case s.Flag('+'):
 			s.Write([]byte(e.JSON()))
 		default:
 			s.Write([]byte(e.Error()))
 		}
 	case 's':
-		s.Write([]byte(e.String()))
+		s.Write([]byte(e.Error()))
 	}
 }
 
