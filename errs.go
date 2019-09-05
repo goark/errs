@@ -108,7 +108,7 @@ func (e *Error) String() string {
 
 //String returns message string of Error
 func (e *Error) GoString() string {
-	return fmt.Sprintf("errs.Error{Msg:%v, Params:%#v, Cause:%#v}", strconv.Quote(e.Msg), e.Params, e.Cause)
+	return fmt.Sprintf("&errs.Error{Msg:%v, Params:%#v, Cause:%#v}", strconv.Quote(e.Msg), e.Params, e.Cause)
 }
 
 //JSON returns string with JSON format
