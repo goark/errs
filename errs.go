@@ -4,9 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
+)
+
+const (
+	nilAngleString = "<nil>"
 )
 
 //Error is wrapper error class
@@ -92,6 +97,9 @@ func (e *Error) Is(target error) bool {
 
 //Error returns message string of Error
 func (e *Error) Error() string {
+	if e == nil {
+		return nilAngleString
+	}
 	if e.Cause == nil {
 		return e.Msg
 	}
@@ -108,11 +116,17 @@ func (e *Error) String() string {
 
 //String returns message string of Error
 func (e *Error) GoString() string {
+	if e == nil {
+		return nilAngleString
+	}
 	return fmt.Sprintf("&errs.Error{Msg:%v, Params:%#v, Cause:%#v}", strconv.Quote(e.Msg), e.Params, e.Cause)
 }
 
 //JSON returns string with JSON format
 func (e *Error) JSON() string {
+	if e == nil {
+		return "null"
+	}
 	elms := []string{}
 	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", e))))
 	elms = append(elms, fmt.Sprintf(`"Msg":%s`, strconv.Quote(e.Error())))
@@ -121,7 +135,7 @@ func (e *Error) JSON() string {
 			elms = append(elms, fmt.Sprintf(`"Params":%s`, string(b)))
 		}
 	}
-	if e.Cause != nil {
+	if e.Cause != nil && !reflect.ValueOf(e.Cause).IsZero() {
 		elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(e.Cause)))
 	}
 	return "{" + strings.Join(elms, ",") + "}"
@@ -140,7 +154,9 @@ func (e *Error) Format(s fmt.State, verb rune) {
 			s.Write([]byte(e.Error()))
 		}
 	case 's':
-		s.Write([]byte(e.Error()))
+		s.Write([]byte(e.String()))
+	default:
+		s.Write([]byte(fmt.Sprintf(`%%!%c(%s)`, verb, e.GoString())))
 	}
 }
 

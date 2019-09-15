@@ -8,46 +8,136 @@ import (
 	"testing"
 )
 
-var nilErr = New("")
-var errTest = New("\"Error\" for test")
-var wrapedErrTest = Wrap(errTest, "")
+var (
+	nilErr        = New("")
+	nilValueErr   = (*Error)(nil)
+	errTest       = New("\"Error\" for test")
+	wrapedErrTest = Wrap(errTest, "")
+)
+
+func TestNil(t *testing.T) {
+	testCases := []struct {
+		err     error
+		typeStr string
+		ptr     string
+		msg     string
+		detail  string
+		json    string
+		badStr  string
+	}{
+		{
+			err:     nilValueErr,
+			typeStr: "*errs.Error",
+			ptr:     "0x0",
+			msg:     "<nil>",
+			detail:  `<nil>`,
+			json:    `null`,
+			badStr:  `%!d(<nil>)`,
+		},
+	}
+
+	for _, tc := range testCases {
+		str := fmt.Sprintf("%T", tc.err)
+		if str != tc.typeStr {
+			t.Errorf("Type of Wrap(\"%v\") is %v, want %v", tc.err, str, tc.typeStr)
+		}
+		str = fmt.Sprintf("%p", tc.err)
+		if str != tc.ptr {
+			t.Errorf("Pointer of Wrap(\"%v\") is %v, want %v", tc.err, str, tc.ptr)
+		}
+		str = fmt.Sprintf("%s", tc.err)
+		if str != tc.msg {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
+		}
+		str = fmt.Sprintf("%v", tc.err)
+		if str != tc.msg {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
+		}
+		str = fmt.Sprintf("%#v", tc.err)
+		if str != tc.detail {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.detail)
+		}
+		str = fmt.Sprintf("%+v", tc.err)
+		if str != tc.json {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.json)
+		}
+		str = fmt.Sprintf("%d", tc.err)
+		if str != tc.badStr {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.badStr)
+		}
+	}
+}
 
 func TestWrap(t *testing.T) {
 	testCases := []struct {
-		err    error
-		msg    string
-		detail string
-		json   string
+		err     error
+		typeStr string
+		ptr     string
+		msg     string
+		detail  string
+		json    string
+		badStr  string
 	}{
 		{
-			err:    nilErr,
-			msg:    "<nil>",
-			detail: "<nil>",
-			json:   "<nil>",
+			err:     nilErr,
+			typeStr: "<nil>",
+			ptr:     "0x0",
+			msg:     "<nil>",
+			detail:  "<nil>",
+			json:    "<nil>",
+			badStr:  `%!d(<nil>)`,
 		},
 		{
-			err:    os.ErrInvalid,
-			msg:    "wrapped message: invalid argument",
-			detail: `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}}`,
-			json:   `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
+			err:     nilValueErr,
+			typeStr: "*errs.Error",
+			ptr:     "0x0",
+			msg:     "wrapped message: <nil>",
+			detail:  `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:<nil>}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: <nil>","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:<nil>})`,
 		},
 		{
-			err:    errTest,
-			msg:    "wrapped message: \"Error\" for test",
-			detail: `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
-			json:   `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
+			err:     os.ErrInvalid,
+			typeStr: "*errs.Error",
+			ptr:     "0x0",
+			msg:     "wrapped message: invalid argument",
+			detail:  `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}})`,
 		},
 		{
-			err:    wrapedErrTest,
-			msg:    "wrapped message: \"Error\" for test",
-			detail: `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
-			json:   `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
+			err:     errTest,
+			typeStr: "*errs.Error",
+			ptr:     "0x0",
+			msg:     "wrapped message: \"Error\" for test",
+			detail:  `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}})`,
+		},
+		{
+			err:     wrapedErrTest,
+			typeStr: "*errs.Error",
+			ptr:     "0x0",
+			msg:     "wrapped message: \"Error\" for test",
+			detail:  `&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Params":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Params":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Params:map[string]string{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Params:map[string]string{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}})`,
 		},
 	}
 
 	for _, tc := range testCases {
 		err := Wrap(tc.err, "wrapped message", WithParam("foo", "bar"))
-		str := fmt.Sprintf("%v", err)
+		str := fmt.Sprintf("%T", err)
+		if str != tc.typeStr {
+			t.Errorf("Type of Wrap(\"%v\") is %v, want %v", tc.err, str, tc.typeStr)
+		}
+		str = fmt.Sprintf("%p", err)
+		if str == tc.ptr {
+			t.Errorf("Pointer of Wrap(\"%v\") is %v, not want %v", tc.err, str, tc.ptr)
+		} else {
+			fmt.Println("Info:", str)
+		}
+		str = fmt.Sprintf("%v", err)
 		if str != tc.msg {
 			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
 		}
@@ -58,6 +148,10 @@ func TestWrap(t *testing.T) {
 		str = fmt.Sprintf("%+v", err)
 		if str != tc.json {
 			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.json)
+		}
+		str = fmt.Sprintf("%d", err)
+		if str != tc.badStr {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.badStr)
 		}
 		if err != nil {
 			str = EncodeJSON(err)
