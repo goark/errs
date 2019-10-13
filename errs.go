@@ -9,7 +9,6 @@ import (
 	"io"
 	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
 )
 
@@ -136,7 +135,7 @@ func (e *Error) GoString() string {
 	if e == nil {
 		return nilAngleString
 	}
-	return fmt.Sprintf("&errs.Error{Msg:%v, Context:%#v, Cause:%#v}", strconv.Quote(e.Msg), e.Context, e.Cause)
+	return fmt.Sprintf("&errs.Error{Msg:%q, Context:%#v, Cause:%#v}", e.Msg, e.Context, e.Cause)
 }
 
 //MarshalJSON method returns serialize string of Error with JSON format.
@@ -151,9 +150,9 @@ func (e *Error) JSON() string {
 		return "null"
 	}
 	elms := []string{}
-	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", e))))
+	elms = append(elms, fmt.Sprintf(`"Type":%q`, fmt.Sprintf("%T", e)))
 	msgBuf := &bytes.Buffer{}
-	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%s`, strconv.Quote(e.Error()))))
+	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%q`, e.Error())))
 	elms = append(elms, msgBuf.String())
 	if len(e.Context) > 0 {
 		if b, err := json.Marshal(e.Context); err == nil {
@@ -221,9 +220,9 @@ func encodeJSON(err error) string {
 		return "null"
 	}
 	elms := []string{}
-	elms = append(elms, fmt.Sprintf(`"Type":%s`, strconv.Quote(fmt.Sprintf("%T", err))))
+	elms = append(elms, fmt.Sprintf(`"Type":%q`, fmt.Sprintf("%T", err)))
 	msgBuf := &bytes.Buffer{}
-	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%s`, strconv.Quote(err.Error()))))
+	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%q`, err.Error())))
 	elms = append(elms, msgBuf.String())
 	unwraped := errors.Unwrap(err)
 	if unwraped != nil {
