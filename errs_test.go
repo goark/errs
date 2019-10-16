@@ -93,41 +93,41 @@ func TestWrap(t *testing.T) {
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: <nil>",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:<nil>}`,
-			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \u003cnil\u003e","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:<nil>})`,
+			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:<nil>}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \u003cnil\u003e","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:<nil>})`,
 		},
 		{
 			err:     os.ErrInvalid,
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: invalid argument",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}}`,
-			json:    `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errors.errorString{s:"invalid argument"}})`,
+			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errors.errorString{s:"invalid argument"}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errors.errorString{s:"invalid argument"}})`,
 		},
 		{
 			err:     errTest,
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: \"Error\" for test",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
-			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}})`,
+			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}})`,
 		},
 		{
 			err:     wrapedErrTest,
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: \"Error\" for test",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
-			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap"}, Cause:&errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}})`,
+			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
+			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}})`,
 		},
 	}
 
 	for _, tc := range testCases {
-		err := Wrap(tc.err, "wrapped message", WithContext("foo", "bar"))
+		err := Wrap(tc.err, "wrapped message", WithContext("foo", "bar"), WithContext("num", 1))
 		str := fmt.Sprintf("%T", err)
 		if str != tc.typeStr {
 			t.Errorf("Type of Wrap(\"%v\") is %v, want %v", tc.err, str, tc.typeStr)
@@ -168,10 +168,6 @@ func TestWrap(t *testing.T) {
 		}
 	}
 }
-
-// errs_test.go:162: Wrap("<nil>") is
-// {"Type":"*errs.Error","Msg":"wrapped message: \u003cnil\u003e","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"}}, want
-// {"Type":"*errs.Error","Msg":"wrapped message: <nil>","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap"}}
 
 func TestIs(t *testing.T) {
 	testCases := []struct {
