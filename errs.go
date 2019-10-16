@@ -66,16 +66,16 @@ func newError(err error, msg string, depth int, opts ...ErrorContextFunc) error 
 
 //WithContext function returns ErrorContextFunc function value.
 //This function is used in New and Wrap functions that represents context (key/value) data.
-func WithContext(name, value string) ErrorContextFunc {
+func WithContext(name string, value interface{}) ErrorContextFunc {
 	return func(e *Error) {
 		e.SetContext(name, value)
 	}
 }
 
 //SetContext method sets context information in Error instance
-func (e *Error) SetContext(name string, value interface{}) {
+func (e *Error) SetContext(name string, value interface{}) *Error {
 	if e == nil {
-		return
+		return e
 	}
 	if e.Context == nil {
 		e.Context = map[string]interface{}{}
@@ -83,7 +83,7 @@ func (e *Error) SetContext(name string, value interface{}) {
 	if len(name) > 0 {
 		e.Context[name] = value
 	}
-	return
+	return e
 }
 
 //Unwrap method returns cause error in Error instance.
