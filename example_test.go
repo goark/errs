@@ -7,6 +7,20 @@ import (
 	"github.com/spiegel-im-spiegel/errs"
 )
 
+// func checkFileOpen(path string) error {
+// 	file, err := os.Open(path)
+// 	if err != nil {
+// 		return Wrap(
+// 			err,
+// 			"file open error",
+// 			WithContext("path", path),
+// 		)
+// 	}
+// 	defer file.Close()
+//
+// 	return nil
+// }
+//
 // func ExampleErrs() {
 // 	var lastErr error
 // 	if err := checkFileOpen("not-exist.txt"); err != nil {
@@ -46,7 +60,7 @@ func ExampleError() {
 		"wrapper error",
 		errs.WithContext("foo1", "bar1"),
 	)
-	err.(*errs.Error).SetContext("foo2", "bar2")
+	_ = err.(*errs.Error).SetContext("foo2", "bar2")
 	fmt.Printf("%+v", err)
 	// Output:
 	// {"Type":"*errs.Error","Msg":"wrapper error: invalid argument","Context":{"foo1":"bar1","foo2":"bar2","function":"github.com/spiegel-im-spiegel/errs_test.ExampleError"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}

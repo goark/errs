@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"runtime"
 	"strings"
@@ -55,7 +54,7 @@ func newError(err error, msg string, depth int, opts ...ErrorContextFunc) error 
 	we := &Error{Msg: msg, Cause: err}
 	//caller function name
 	if fname, _, _ := caller(depth); len(fname) > 0 {
-		we.SetContext("function", fname)
+		we = we.SetContext("function", fname)
 	}
 	//other params
 	for _, opt := range opts {
@@ -68,7 +67,7 @@ func newError(err error, msg string, depth int, opts ...ErrorContextFunc) error 
 //This function is used in New and Wrap functions that represents context (key/value) data.
 func WithContext(name string, value interface{}) ErrorContextFunc {
 	return func(e *Error) {
-		e.SetContext(name, value)
+		_ = e.SetContext(name, value)
 	}
 }
 
@@ -172,14 +171,14 @@ func (e *Error) Format(s fmt.State, verb rune) {
 	case 'v':
 		switch {
 		case s.Flag('#'):
-			io.Copy(s, strings.NewReader(e.GoString()))
+			_, _ = strings.NewReader(e.GoString()).WriteTo(s)
 		case s.Flag('+'):
-			io.Copy(s, strings.NewReader(e.JSON()))
+			_, _ = strings.NewReader(e.JSON()).WriteTo(s)
 		default:
-			io.Copy(s, strings.NewReader(e.Error()))
+			_, _ = strings.NewReader(e.Error()).WriteTo(s)
 		}
 	case 's':
-		io.Copy(s, strings.NewReader(e.String()))
+		_, _ = strings.NewReader(e.String()).WriteTo(s)
 	default:
 		fmt.Fprintf(s, `%%!%c(%s)`, verb, e.GoString())
 	}
@@ -226,7 +225,7 @@ func encodeJSON(err error) string {
 	elms = append(elms, msgBuf.String())
 	unwraped := errors.Unwrap(err)
 	if unwraped != nil {
-		cause := `{}`
+		var cause string
 		switch e := unwraped.(type) {
 		case *Error:
 			cause = e.JSON()

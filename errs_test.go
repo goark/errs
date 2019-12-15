@@ -217,20 +217,6 @@ func TestAs(t *testing.T) {
 	}
 }
 
-func checkFileOpen(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return Wrap(
-			err,
-			"file open error",
-			WithContext("path", path),
-		)
-	}
-	defer file.Close()
-
-	return nil
-}
-
 /* Copyright 2019 Spiegel
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
