@@ -169,6 +169,24 @@ func TestWrap(t *testing.T) {
 	}
 }
 
+func TestCause(t *testing.T) {
+	testCases := []struct {
+		err   error
+		cause error
+	}{
+		{err: nil, cause: nil},
+		{err: os.ErrInvalid, cause: os.ErrInvalid},
+		{err: Wrap(os.ErrInvalid, "wrapped error"), cause: os.ErrInvalid},
+	}
+
+	for _, tc := range testCases {
+		c := Cause(tc.err)
+		if c != tc.cause {
+			t.Errorf("result Cause(\"%v\") is \"%v\", want %v", tc.err, c, tc.cause)
+		}
+	}
+}
+
 func TestIs(t *testing.T) {
 	testCases := []struct {
 		err    error
@@ -191,7 +209,7 @@ func TestIs(t *testing.T) {
 
 	for _, tc := range testCases {
 		if ok := errors.Is(tc.err, tc.target); ok != tc.res {
-			t.Errorf("result if Is(\"%v\") is %v, want %v", tc.err, ok, tc.res)
+			t.Errorf("result if Is(\"%v\", \"%v\") is %v, want %v", tc.err, tc.target, ok, tc.res)
 		}
 	}
 }

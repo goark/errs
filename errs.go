@@ -186,13 +186,14 @@ func (e *Error) Format(s fmt.State, verb rune) {
 
 //Cause function finds cause error in target error instance.
 func Cause(err error) error {
-	for {
+	for err != nil {
 		unwraped := errors.Unwrap(err)
 		if unwraped == nil {
 			return err
 		}
 		err = unwraped
 	}
+	return err
 }
 
 //EncodeJSON function dumps out error instance with JSON format.
