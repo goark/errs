@@ -134,7 +134,7 @@ func (e *Error) GoString() string {
 	if e == nil {
 		return nilAngleString
 	}
-	return fmt.Sprintf("&errs.Error{Msg:%q, Context:%#v, Cause:%#v}", e.Msg, e.Context, e.Cause)
+	return fmt.Sprintf("%T{Msg:%q, Context:%#v, Cause:%#v}", e, e.Msg, e.Context, e.Cause)
 }
 
 //MarshalJSON method returns serialize string of Error with JSON format.
@@ -186,13 +186,14 @@ func (e *Error) Format(s fmt.State, verb rune) {
 
 //Cause function finds cause error in target error instance.
 func Cause(err error) error {
-	for {
+	for err != nil {
 		unwraped := errors.Unwrap(err)
 		if unwraped == nil {
 			return err
 		}
 		err = unwraped
 	}
+	return err
 }
 
 //EncodeJSON function dumps out error instance with JSON format.
@@ -237,17 +238,17 @@ func encodeJSON(err error) string {
 	return "{" + strings.Join(elms, ",") + "}"
 }
 
-/* Copyright 2019 Spiegel
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* 	http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+/* Copyright 2019,2020 Spiegel
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */

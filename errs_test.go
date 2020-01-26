@@ -93,36 +93,36 @@ func TestWrap(t *testing.T) {
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: <nil>",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:<nil>}`,
+			detail:  `*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:<nil>}`,
 			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \u003cnil\u003e","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:<nil>})`,
+			badStr:  `%!d(*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:<nil>})`,
 		},
 		{
 			err:     os.ErrInvalid,
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: invalid argument",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errors.errorString{s:"invalid argument"}}`,
+			detail:  `*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errors.errorString{s:"invalid argument"}}`,
 			json:    `{"Type":"*errs.Error","Msg":"wrapped message: invalid argument","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errors.errorString{s:"invalid argument"}})`,
+			badStr:  `%!d(*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errors.errorString{s:"invalid argument"}})`,
 		},
 		{
 			err:     errTest,
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: \"Error\" for test",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
+			detail:  `*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}`,
 			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}})`,
+			badStr:  `%!d(*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}})`,
 		},
 		{
 			err:     wrapedErrTest,
 			typeStr: "*errs.Error",
 			ptr:     "0x0",
 			msg:     "wrapped message: \"Error\" for test",
-			detail:  `&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
+			detail:  `*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:*errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}`,
 			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
-			badStr:  `%!d(&errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:&errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}})`,
+			badStr:  `%!d(*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:*errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}})`,
 		},
 	}
 
@@ -169,6 +169,24 @@ func TestWrap(t *testing.T) {
 	}
 }
 
+func TestCause(t *testing.T) {
+	testCases := []struct {
+		err   error
+		cause error
+	}{
+		{err: nil, cause: nil},
+		{err: os.ErrInvalid, cause: os.ErrInvalid},
+		{err: Wrap(os.ErrInvalid, "wrapped error"), cause: os.ErrInvalid},
+	}
+
+	for _, tc := range testCases {
+		c := Cause(tc.err)
+		if c != tc.cause {
+			t.Errorf("result Cause(\"%v\") is \"%v\", want %v", tc.err, c, tc.cause)
+		}
+	}
+}
+
 func TestIs(t *testing.T) {
 	testCases := []struct {
 		err    error
@@ -191,7 +209,7 @@ func TestIs(t *testing.T) {
 
 	for _, tc := range testCases {
 		if ok := errors.Is(tc.err, tc.target); ok != tc.res {
-			t.Errorf("result if Is(\"%v\") is %v, want %v", tc.err, ok, tc.res)
+			t.Errorf("result if Is(\"%v\", \"%v\") is %v, want %v", tc.err, tc.target, ok, tc.res)
 		}
 	}
 }
@@ -217,17 +235,17 @@ func TestAs(t *testing.T) {
 	}
 }
 
-/* Copyright 2019 Spiegel
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* 	http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+/* Copyright 2019,2020 Spiegel
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
