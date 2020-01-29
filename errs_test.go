@@ -1,19 +1,49 @@
 package errs
 
 import (
+	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 	"syscall"
 	"testing"
 )
 
+type testError struct {
+	Msg string
+	Err error
+}
+
+func (t *testError) Error() string {
+	return strings.Join([]string{t.Msg, t.Err.Error()}, ": ")
+}
+func (t *testError) Unwrap() error {
+	return t.Err
+}
+func (t *testError) MarshalJSON() ([]byte, error) {
+	if t == nil {
+		return []byte("null"), nil
+	}
+	elms := []string{}
+	elms = append(elms, fmt.Sprintf(`"Type":%q`, fmt.Sprintf("%T", t)))
+	msgBuf := &bytes.Buffer{}
+	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%q`, t.Error())))
+	elms = append(elms, msgBuf.String())
+	if t.Err != nil && !reflect.ValueOf(t.Err).IsZero() {
+		elms = append(elms, fmt.Sprintf(`"Err":%s`, EncodeJSON(t.Err)))
+	}
+
+	return []byte("{" + strings.Join(elms, ",") + "}"), nil
+}
+
 var (
-	nilErr        = New("")
-	nilValueErr   = (*Error)(nil)
-	errTest       = New("\"Error\" for test")
-	wrapedErrTest = Wrap(errTest, "")
+	nilErr         = New("")
+	nilValueErr    = (*Error)(nil)
+	errTest        = New("\"Error\" for test")
+	wrapedErrTest  = Wrap(errTest, "")
+	wrapedErrTest2 = &testError{Msg: "test for testError", Err: wrapedErrTest}
 )
 
 func TestNil(t *testing.T) {
@@ -124,6 +154,15 @@ func TestWrap(t *testing.T) {
 			json:    `{"Type":"*errs.Error","Msg":"wrapped message: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}`,
 			badStr:  `%!d(*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:*errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}})`,
 		},
+		{
+			err:     wrapedErrTest2,
+			typeStr: "*errs.Error",
+			ptr:     "0x0",
+			msg:     "wrapped message: test for testError: \"Error\" for test",
+			detail:  `*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.testError{Msg:"test for testError", Err:*errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}}`,
+			json:    `{"Type":"*errs.Error","Msg":"wrapped message: test for testError: \"Error\" for test","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs.TestWrap","num":1},"Cause":{"Type":"*errs.testError","Msg":"test for testError: \"Error\" for test","Err":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"},"Cause":{"Type":"*errs.Error","Msg":"\"Error\" for test","Context":{"function":"github.com/spiegel-im-spiegel/errs.init"}}}}}`,
+			badStr:  `%!d(*errs.Error{Msg:"wrapped message", Context:map[string]interface {}{"foo":"bar", "function":"github.com/spiegel-im-spiegel/errs.TestWrap", "num":1}, Cause:&errs.testError{Msg:"test for testError", Err:*errs.Error{Msg:"", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:*errs.Error{Msg:"\"Error\" for test", Context:map[string]interface {}{"function":"github.com/spiegel-im-spiegel/errs.init"}, Cause:<nil>}}}})`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -208,7 +247,7 @@ func TestIs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		if ok := errors.Is(tc.err, tc.target); ok != tc.res {
+		if ok := Is(tc.err, tc.target); ok != tc.res {
 			t.Errorf("result if Is(\"%v\", \"%v\") is %v, want %v", tc.err, tc.target, ok, tc.res)
 		}
 	}
@@ -226,11 +265,29 @@ func TestAs(t *testing.T) {
 
 	for _, tc := range testCases {
 		var cs syscall.Errno
-		if ok := errors.As(tc.err, &cs); ok != tc.res {
+		if ok := As(tc.err, &cs); ok != tc.res {
 			t.Errorf("result if As(\"%v\") is %v, want %v", tc.err, ok, tc.res)
 			if ok && cs != tc.cause {
 				t.Errorf("As(\"%v\") = \"%v\", want \"%v\"", tc.err, cs, tc.cause)
 			}
+		}
+	}
+}
+
+func TestUnwrap(t *testing.T) {
+	testCases := []struct {
+		err   error
+		cause error
+	}{
+		{err: nil, cause: nil},
+		{err: syscall.ENOENT, cause: nil},
+		{err: Wrap(syscall.ENOENT, "wrapping error"), cause: syscall.ENOENT},
+	}
+
+	for _, tc := range testCases {
+		cs := Unwrap(tc.err)
+		if cs != tc.cause {
+			t.Errorf("As(\"%v\") = \"%v\", want \"%v\"", tc.err, cs, tc.cause)
 		}
 	}
 }

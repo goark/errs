@@ -140,11 +140,11 @@ func (e *Error) GoString() string {
 //MarshalJSON method returns serialize string of Error with JSON format.
 //This method is implementation of json.Marshaler interface.
 func (e *Error) MarshalJSON() ([]byte, error) {
-	return []byte(e.JSON()), nil
+	return []byte(e.EncodeJSON()), nil
 }
 
-//JSON method returns serialize string of Error with JSON format.
-func (e *Error) JSON() string {
+//EncodeJSON method returns serialize string of Error with JSON format.
+func (e *Error) EncodeJSON() string {
 	if e == nil {
 		return "null"
 	}
@@ -173,7 +173,7 @@ func (e *Error) Format(s fmt.State, verb rune) {
 		case s.Flag('#'):
 			_, _ = strings.NewReader(e.GoString()).WriteTo(s)
 		case s.Flag('+'):
-			_, _ = strings.NewReader(e.JSON()).WriteTo(s)
+			_, _ = strings.NewReader(e.EncodeJSON()).WriteTo(s)
 		default:
 			_, _ = strings.NewReader(e.Error()).WriteTo(s)
 		}
@@ -196,16 +196,6 @@ func Cause(err error) error {
 	return err
 }
 
-//EncodeJSON function dumps out error instance with JSON format.
-func EncodeJSON(err error) string {
-	switch e := err.(type) {
-	case *Error:
-		return e.JSON()
-	default:
-		return encodeJSON(err)
-	}
-}
-
 //caller returns caller info.
 func caller(depth int) (string, string, int) {
 	pc, src, line, ok := runtime.Caller(depth + 1)
@@ -213,6 +203,21 @@ func caller(depth int) (string, string, int) {
 		return "", "", 0
 	}
 	return runtime.FuncForPC(pc).Name(), src, line
+}
+
+//EncodeJSON function dumps out error instance with JSON format.
+func EncodeJSON(err error) string {
+	if e, ok := err.(*Error); ok {
+		return e.EncodeJSON()
+	}
+	if e, ok := err.(json.Marshaler); ok {
+		b, ee := json.Marshal(e)
+		if ee != nil {
+			return encodeJSON(err)
+		}
+		return strings.TrimSuffix(string(b), "\n")
+	}
+	return encodeJSON(err)
 }
 
 func encodeJSON(err error) string {
@@ -226,17 +231,19 @@ func encodeJSON(err error) string {
 	elms = append(elms, msgBuf.String())
 	unwraped := errors.Unwrap(err)
 	if unwraped != nil {
-		var cause string
-		switch e := unwraped.(type) {
-		case *Error:
-			cause = e.JSON()
-		default:
-			cause = encodeJSON(unwraped)
-		}
-		elms = append(elms, fmt.Sprintf(`"Cause":%s`, cause))
+		elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(unwraped)))
 	}
 	return "{" + strings.Join(elms, ",") + "}"
 }
+
+// Is is conpatible with errors.Is.
+func Is(err, target error) bool { return errors.Is(err, target) }
+
+// As is conpatible with errors.As.
+func As(err error, target interface{}) bool { return errors.As(err, target) }
+
+// Unwrap is conpatible with errors.Unwrap.
+func Unwrap(err error) error { return errors.Unwrap(err) }
 
 /* Copyright 2019,2020 Spiegel
  *
