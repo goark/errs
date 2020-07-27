@@ -107,9 +107,17 @@ func (e *Error) Is(target error) bool {
 	if e == target {
 		return true
 	}
-	cause := Cause(target)
-	if cause != target && errors.Is(e, cause) {
+	if e.Msg == target {
 		return true
+	}
+	cause := Cause(target)
+	if cause != target {
+		if errors.Is(e, cause) {
+			return true
+		}
+		if errors.Is(e.Msg, cause) {
+			return true
+		}
 	}
 	return false
 }
