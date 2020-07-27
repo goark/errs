@@ -107,7 +107,7 @@ func (e *Error) Is(target error) bool {
 	if e == target {
 		return true
 	}
-	if e.Msg == target {
+	if e != nil && errors.Is(e.Msg, target) {
 		return true
 	}
 	cause := Cause(target)
@@ -115,7 +115,7 @@ func (e *Error) Is(target error) bool {
 		if errors.Is(e, cause) {
 			return true
 		}
-		if errors.Is(e.Msg, cause) {
+		if e != nil && errors.Is(e.Msg, cause) {
 			return true
 		}
 	}
