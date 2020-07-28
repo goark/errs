@@ -10,13 +10,13 @@ import (
 func ExampleNew() {
 	fmt.Printf("%+v", errs.New("custom error"))
 	// Output:
-	// {"Type":"*errs.Error","Msg":"custom error","Context":{"function":"github.com/spiegel-im-spiegel/errs_test.ExampleNew"}}
+	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"custom error"},"Context":{"function":"github.com/spiegel-im-spiegel/errs_test.ExampleNew"}}
 }
 
 func ExampleWrap() {
 	fmt.Printf("%+v", errs.Wrap(os.ErrInvalid, "wrapper error"))
 	// Output:
-	// {"Type":"*errs.Error","Msg":"wrapper error: invalid argument","Context":{"function":"github.com/spiegel-im-spiegel/errs_test.ExampleWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
+	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"wrapper error"},"Context":{"function":"github.com/spiegel-im-spiegel/errs_test.ExampleWrap"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
 }
 
 func ExampleWithContext() {
@@ -27,7 +27,7 @@ func ExampleWithContext() {
 	)
 	fmt.Printf("%+v", err)
 	// Output:
-	// {"Type":"*errs.Error","Msg":"wrapper error: invalid argument","Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs_test.ExampleWithContext"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
+	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"wrapper error"},"Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs_test.ExampleWithContext"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
 }
 
 func ExampleError() {
@@ -39,7 +39,7 @@ func ExampleError() {
 	_ = err.(*errs.Error).SetContext("foo2", "bar2")
 	fmt.Printf("%+v", err)
 	// Output:
-	// {"Type":"*errs.Error","Msg":"wrapper error: invalid argument","Context":{"foo1":"bar1","foo2":"bar2","function":"github.com/spiegel-im-spiegel/errs_test.ExampleError"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
+	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"wrapper error"},"Context":{"foo1":"bar1","foo2":"bar2","function":"github.com/spiegel-im-spiegel/errs_test.ExampleError"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
 }
 
 func ExampleCause() {

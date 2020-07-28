@@ -18,7 +18,7 @@ const (
 //Error type is a implementation of error interface.
 //This type is for wrapping cause error instance.
 type Error struct {
-	Msg     error
+	Err     error
 	Cause   error
 	Context map[string]interface{}
 }
@@ -45,6 +45,9 @@ func Wrap(err error, msg string, opts ...ErrorContextFunc) error {
 	if err == nil {
 		return nil
 	}
+	if len(msg) == 0 {
+		return newError(err, nil, 2, opts...)
+	}
 	return newError(errors.New(msg), err, 2, opts...)
 }
 
@@ -58,7 +61,7 @@ func WrapWithCause(err, cause error, opts ...ErrorContextFunc) error {
 
 //newError returns error instance. (internal)
 func newError(err, cause error, depth int, opts ...ErrorContextFunc) error {
-	we := &Error{Msg: err, Cause: cause}
+	we := &Error{Err: err, Cause: cause}
 	//caller function name
 	if fname, _, _ := caller(depth); len(fname) > 0 {
 		we = we.SetContext("function", fname)
@@ -98,6 +101,9 @@ func (e *Error) Unwrap() error {
 	if e == nil {
 		return nil
 	}
+	if e.Cause == nil {
+		return Cause(e.Err)
+	}
 	return e.Cause
 }
 
@@ -107,7 +113,7 @@ func (e *Error) Is(target error) bool {
 	if e == target {
 		return true
 	}
-	if e != nil && errors.Is(e.Msg, target) {
+	if e != nil && errors.Is(e.Err, target) {
 		return true
 	}
 	cause := Cause(target)
@@ -115,7 +121,7 @@ func (e *Error) Is(target error) bool {
 		if errors.Is(e, cause) {
 			return true
 		}
-		if e != nil && errors.Is(e.Msg, cause) {
+		if e != nil && errors.Is(e.Err, cause) {
 			return true
 		}
 	}
@@ -129,12 +135,12 @@ func (e *Error) Error() string {
 		return nilAngleString
 	}
 	if e.Cause == nil {
-		return e.Msg.Error()
+		return e.Err.Error()
 	}
-	if len(e.Msg.Error()) == 0 {
+	if len(e.Err.Error()) == 0 {
 		return e.Cause.Error()
 	}
-	return fmt.Sprintf("%v: %v", e.Msg, e.Cause)
+	return fmt.Sprintf("%v: %v", e.Err, e.Cause)
 }
 
 //String method returns error message.
@@ -149,7 +155,7 @@ func (e *Error) GoString() string {
 	if e == nil {
 		return nilAngleString
 	}
-	return fmt.Sprintf("%T{Msg:%q, Context:%#v, Cause:%#v}", e, e.Msg.Error(), e.Context, e.Cause)
+	return fmt.Sprintf("%T{Err:%#v, Cause:%#v, Context:%#v}", e, e.Err, e.Cause, e.Context)
 }
 
 //MarshalJSON method returns serialize string of Error with JSON format.
@@ -166,7 +172,7 @@ func (e *Error) EncodeJSON() string {
 	elms := []string{}
 	elms = append(elms, fmt.Sprintf(`"Type":%q`, fmt.Sprintf("%T", e)))
 	msgBuf := &bytes.Buffer{}
-	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%q`, e.Error())))
+	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Err":%s`, EncodeJSON(e.Err))))
 	elms = append(elms, msgBuf.String())
 	if len(e.Context) > 0 {
 		if b, err := json.Marshal(e.Context); err == nil {
@@ -230,7 +236,7 @@ func EncodeJSON(err error) string {
 		if ee != nil {
 			return encodeJSON(err)
 		}
-		return strings.TrimSuffix(string(b), "\n")
+		return strings.TrimSpace(string(b))
 	}
 	return encodeJSON(err)
 }
