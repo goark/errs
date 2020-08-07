@@ -37,31 +37,20 @@ func New(msg string, opts ...ErrorContextFunc) error {
 	if len(msg) == 0 {
 		return nil
 	}
-	return newError(errors.New(msg), nil, 2, opts...)
+	return newError(errors.New(msg), 2, opts...)
 }
 
-//Wrap function returns a wrapping error instance with message and context informations.
-func Wrap(err error, msg string, opts ...ErrorContextFunc) error {
+//Wrap function returns a wrapping error instance with context informations.
+func Wrap(err error, opts ...ErrorContextFunc) error {
 	if err == nil {
 		return nil
 	}
-	if len(msg) == 0 {
-		return newError(err, nil, 2, opts...)
-	}
-	return newError(errors.New(msg), err, 2, opts...)
-}
-
-//Wrap function returns a wrapping error instance with message and context informations.
-func WrapWithCause(err, cause error, opts ...ErrorContextFunc) error {
-	if err == nil {
-		return nil
-	}
-	return newError(err, cause, 2, opts...)
+	return newError(err, 2, opts...)
 }
 
 //newError returns error instance. (internal)
-func newError(err, cause error, depth int, opts ...ErrorContextFunc) error {
-	we := &Error{Err: err, Cause: cause}
+func newError(err error, depth int, opts ...ErrorContextFunc) error {
+	we := &Error{Err: err}
 	//caller function name
 	if fname, _, _ := caller(depth); len(fname) > 0 {
 		we = we.SetContext("function", fname)
@@ -81,7 +70,15 @@ func WithContext(name string, value interface{}) ErrorContextFunc {
 	}
 }
 
-//SetContext method sets context information in Error instance
+//WithCause function returns ErrorContextFunc function value.
+//This function is used in New and Wrap functions that represents context (key/value) data.
+func WithCause(err error) ErrorContextFunc {
+	return func(e *Error) {
+		_ = e.SetCause(err)
+	}
+}
+
+//SetContext method sets context information
 func (e *Error) SetContext(name string, value interface{}) *Error {
 	if e == nil {
 		return e
@@ -95,6 +92,15 @@ func (e *Error) SetContext(name string, value interface{}) *Error {
 	return e
 }
 
+//SetCause method sets cause error instance
+func (e *Error) SetCause(err error) *Error {
+	if e == nil {
+		return e
+	}
+	e.Cause = err
+	return e
+}
+
 //Unwrap method returns cause error in Error instance.
 //This method is used in errors.Unwrap function.
 func (e *Error) Unwrap() error {
@@ -102,7 +108,7 @@ func (e *Error) Unwrap() error {
 		return nil
 	}
 	if e.Cause == nil {
-		return Cause(e.Err)
+		return e.Err
 	}
 	return e.Cause
 }
@@ -113,16 +119,24 @@ func (e *Error) Is(target error) bool {
 	if e == target {
 		return true
 	}
-	if e != nil && errors.Is(e.Err, target) {
-		return true
-	}
-	cause := Cause(target)
-	if cause != target {
-		if errors.Is(e, cause) {
+	if e != nil {
+		if errors.Is(e.Err, target) {
 			return true
 		}
-		if e != nil && errors.Is(e.Err, cause) {
+		if errors.Is(e.Cause, target) {
 			return true
+		}
+		cause := Cause(target)
+		if cause != nil && cause != target {
+			if errors.Is(e, cause) {
+				return true
+			}
+			if errors.Is(e.Err, cause) {
+				return true
+			}
+			if errors.Is(e.Cause, cause) {
+				return true
+			}
 		}
 	}
 	return false
