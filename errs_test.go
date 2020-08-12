@@ -183,6 +183,10 @@ func TestNewWithCause(t *testing.T) {
 		} else {
 			fmt.Println("Info:", str)
 		}
+		str = fmt.Sprintf("%s", err)
+		if str != tc.msg {
+			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
+		}
 		str = fmt.Sprintf("%v", err)
 		if str != tc.msg {
 			t.Errorf("Wrap(\"%v\") is %v, want %v", tc.err, str, tc.msg)
