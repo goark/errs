@@ -396,23 +396,32 @@ func TestAs(t *testing.T) {
 
 func TestUnwrap(t *testing.T) {
 	testCases := []struct {
-		err   error
-		cause error
+		err    error
+		unwrap string
+		cause  error
 	}{
-		{err: nil, cause: nil},
-		{err: syscall.ENOENT, cause: nil},
-		{err: New("wrapped error", WithCause(syscall.ENOENT)), cause: syscall.ENOENT},
+		{err: nil, unwrap: "", cause: nil},
+		{err: syscall.ENOENT, unwrap: "", cause: nil},
+		{err: New("wrapped error"), unwrap: "", cause: nil},
+		{err: New("wrapped error", WithCause(syscall.ENOENT)), unwrap: "no such file or directory", cause: syscall.ENOENT},
+		{err: Wrap(syscall.ENOENT), unwrap: "no such file or directory", cause: syscall.ENOENT},
 	}
 
 	for _, tc := range testCases {
 		cs := Unwrap(tc.err)
+		if cs != nil {
+			str := cs.Error()
+			if str != tc.unwrap {
+				t.Errorf("Unwrap(\"%v\") = \"%v\", want \"%v\"", tc.err, str, tc.unwrap)
+			}
+		}
 		if cs != tc.cause {
 			t.Errorf("As(\"%v\") = \"%v\", want \"%v\"", tc.err, cs, tc.cause)
 		}
 	}
 }
 
-/* Copyright 2019,2020 Spiegel
+/* Copyright 2019-2021 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
