@@ -40,7 +40,7 @@ func ExampleEncodeJSON() {
 	_, err := os.Open("not-exist.txt")
 	fmt.Printf("%v", errs.EncodeJSON(err))
 	// Output:
-	// {"Type":"*os.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}}
+	// {"Type":"*fs.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}}
 }
 
 /* Copyright 2019,2020 Spiegel
