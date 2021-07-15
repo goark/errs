@@ -112,7 +112,7 @@ func (e *Error) Unwrap() error {
 		if e.wrapFlag {
 			return e.Err
 		}
-		return nil
+		return errors.Unwrap(e.Err)
 	}
 	return e.Cause
 }
