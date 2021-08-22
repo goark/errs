@@ -1,8 +1,6 @@
 name: lint
 on:
   push:
-    tags:
-      - v*
     branches:
       - master
   pull_request:
@@ -22,4 +20,4 @@ jobs:
           # Required: the version of golangci-lint is required and must be specified without patch version: we always use the latest patch version.
           version: latest
       - name: testing
-        run: go test ./...
+        run: go test -shuffle on ./...
