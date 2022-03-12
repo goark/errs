@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spiegel-im-spiegel/errs"
+	"github.com/goark/errs"
 )
 
 func checkFileOpen(path string) error {

@@ -1,3 +1,3 @@
-module github.com/spiegel-im-spiegel/errs
+module github.com/goark/errs
 
 go 1.17

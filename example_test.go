@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spiegel-im-spiegel/errs"
+	"github.com/goark/errs"
 )
 
 func ExampleNew() {
@@ -15,7 +15,7 @@ func ExampleNew() {
 	)
 	fmt.Printf("%+v", err)
 	// Output:
-	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"wrapper error"},"Context":{"foo":"bar","function":"github.com/spiegel-im-spiegel/errs_test.ExampleNew"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
+	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"wrapper error"},"Context":{"foo":"bar","function":"github.com/goark/errs_test.ExampleNew"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}
 }
 
 func ExampleError() {
@@ -26,7 +26,7 @@ func ExampleError() {
 	_ = err.(*errs.Error).SetContext("foo2", "bar2")
 	fmt.Printf("%+v", err)
 	// Output:
-	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"invalid argument"},"Context":{"foo1":"bar1","foo2":"bar2","function":"github.com/spiegel-im-spiegel/errs_test.ExampleError"}}
+	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"invalid argument"},"Context":{"foo1":"bar1","foo2":"bar2","function":"github.com/goark/errs_test.ExampleError"}}
 }
 
 func ExampleCause() {
