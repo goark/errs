@@ -2,8 +2,8 @@
 
 [![check vulns](https://github.com/goark/errs/workflows/vulns/badge.svg)](https://github.com/goark/errs/actions)
 [![lint status](https://github.com/goark/errs/workflows/lint/badge.svg)](https://github.com/goark/errs/actions)
-[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/spiegel-im-spiegel/errs/master/LICENSE)
-[![GitHub release](http://img.shields.io/github/release/spiegel-im-spiegel/errs.svg)](https://github.com/goark/errs/releases/latest)
+[![GitHub license](https://img.shields.io/badge/license-Apache%202-blue.svg)](https://raw.githubusercontent.com/goark/errs/master/LICENSE)
+[![GitHub release](http://img.shields.io/github/release/goark/errs.svg)](https://github.com/goark/errs/releases/latest)
 
 Package [errs] implements functions to manipulate error instances.
 This package is required Go 1.13 or later.
@@ -120,4 +120,4 @@ func main() {
 }
 ```
 
-[errs]: https://github.com/goark/errs "spiegel-im-spiegel/errs: Error handling for Golang"
+[errs]: https://github.com/goark/errs "goark/errs: Error handling for Golang"
