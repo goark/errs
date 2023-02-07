@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -327,20 +328,18 @@ func TestWrapWithCause(t *testing.T) {
 	}
 }
 
-func TestCause(t *testing.T) {
+func TestMultiError(t *testing.T) {
 	testCases := []struct {
-		err   error
-		cause error
+		err  error
+		want string
 	}{
-		{err: nil, cause: nil},
-		{err: os.ErrInvalid, cause: os.ErrInvalid},
-		{err: New("wrapped error", WithCause(os.ErrInvalid)), cause: os.ErrInvalid},
+		{err: Wrap(os.ErrInvalid, WithCause(errors.Join(io.EOF, io.ErrUnexpectedEOF))), want: `{"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"invalid argument"},"Context":{"function":"github.com/goark/errs.TestMultiError"},"Cause":{"Type":"*errors.joinError","Msg":"EOF\nunexpected EOF","Cause":[{"Type":"*errors.errorString","Msg":"EOF"},{"Type":"*errors.errorString","Msg":"unexpected EOF"}]}}`},
+		{err: Wrap(errors.Join(io.EOF, io.ErrUnexpectedEOF), WithCause(os.ErrInvalid)), want: `{"Type":"*errs.Error","Err":{"Type":"*errors.joinError","Msg":"EOF\nunexpected EOF","Cause":[{"Type":"*errors.errorString","Msg":"EOF"},{"Type":"*errors.errorString","Msg":"unexpected EOF"}]},"Context":{"function":"github.com/goark/errs.TestMultiError"},"Cause":{"Type":"*errors.errorString","Msg":"invalid argument"}}`},
 	}
 
 	for _, tc := range testCases {
-		c := Cause(tc.err)
-		if c != tc.cause {
-			t.Errorf("result Cause(\"%v\") is \"%v\", want %v", tc.err, c, tc.cause)
+		if got := EncodeJSON(tc.err); got != tc.want {
+			t.Errorf("result EncodeJSON(\"%v\") is %v, want %v", tc.err, got, tc.want)
 		}
 	}
 }
@@ -362,8 +361,9 @@ func TestIs(t *testing.T) {
 		{err: New("wrapped error", WithCause(os.ErrInvalid)), res: true, target: os.ErrInvalid},
 		{err: New("wrapped error", WithCause(os.ErrInvalid)), res: false, target: errTest},
 		{err: New("wrapped error", WithCause(errTest)), res: true, target: errTest},
-		{err: New("wrapped error", WithCause(errTest)), res: true, target: wrapedErrTest},
 		{err: New("wrapped error", WithCause(errTest)), res: false, target: os.ErrInvalid},
+		{err: New("wrapped error", WithCause(errors.Join(io.EOF, os.ErrInvalid))), res: true, target: os.ErrInvalid},
+		{err: Wrap(errors.Join(io.EOF, os.ErrInvalid)), res: true, target: os.ErrInvalid},
 	}
 
 	for _, tc := range testCases {
@@ -381,6 +381,8 @@ func TestAs(t *testing.T) {
 	}{
 		{err: nil, res: false, cause: nil},
 		{err: New("wrapped error", WithCause(syscall.ENOENT)), res: true, cause: syscall.ENOENT},
+		{err: New("wrapped error", WithCause(errors.Join(syscall.ENOENT, os.ErrInvalid))), res: true, cause: syscall.ENOENT},
+		{err: Wrap(errors.Join(syscall.ENOENT, os.ErrInvalid)), res: true, cause: syscall.ENOENT},
 	}
 
 	for _, tc := range testCases {
@@ -421,7 +423,7 @@ func TestUnwrap(t *testing.T) {
 	}
 }
 
-/* Copyright 2019-2021 Spiegel
+/* Copyright 2019-2023 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

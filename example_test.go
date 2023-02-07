@@ -29,13 +29,6 @@ func ExampleError() {
 	// {"Type":"*errs.Error","Err":{"Type":"*errors.errorString","Msg":"invalid argument"},"Context":{"foo1":"bar1","foo2":"bar2","function":"github.com/goark/errs_test.ExampleError"}}
 }
 
-func ExampleCause() {
-	_, err := os.Open("not-exist.txt")
-	fmt.Printf("%v", errs.Cause(err))
-	// Output:
-	// no such file or directory
-}
-
 func ExampleEncodeJSON() {
 	_, err := os.Open("not-exist.txt")
 	fmt.Printf("%v", errs.EncodeJSON(err))
