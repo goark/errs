@@ -15,8 +15,8 @@ const (
 	nilAngleString = "<nil>"
 )
 
-//Error type is a implementation of error interface.
-//This type is for wrapping cause error instance.
+// Error type is a implementation of error interface.
+// This type is for wrapping cause error instance.
 type Error struct {
 	wrapFlag bool
 	Err      error
@@ -30,10 +30,10 @@ var _ fmt.GoStringer = (*Error)(nil) //Error type is compatible with fmt.GoStrin
 var _ fmt.Formatter = (*Error)(nil)  //Error type is compatible with fmt.Formatter interface
 var _ json.Marshaler = (*Error)(nil) //Error type is compatible with json.Marshaler interface
 
-//ErrorContextFunc type is self-referential function type for New and Wrap functions. (functional options pattern)
+// ErrorContextFunc type is self-referential function type for New and Wrap functions. (functional options pattern)
 type ErrorContextFunc func(*Error)
 
-//New function returns an error instance with message and context informations.
+// New function returns an error instance with message and context informations.
 func New(msg string, opts ...ErrorContextFunc) error {
 	if len(msg) == 0 {
 		return nil
@@ -41,7 +41,7 @@ func New(msg string, opts ...ErrorContextFunc) error {
 	return newError(errors.New(msg), false, 2, opts...)
 }
 
-//Wrap function returns a wrapping error instance with context informations.
+// Wrap function returns a wrapping error instance with context informations.
 func Wrap(err error, opts ...ErrorContextFunc) error {
 	if err == nil {
 		return nil
@@ -49,7 +49,7 @@ func Wrap(err error, opts ...ErrorContextFunc) error {
 	return newError(err, true, 2, opts...)
 }
 
-//newError returns error instance. (internal)
+// newError returns error instance. (internal)
 func newError(err error, wrapFlag bool, depth int, opts ...ErrorContextFunc) error {
 	we := &Error{Err: err, wrapFlag: wrapFlag}
 	//caller function name
@@ -63,23 +63,23 @@ func newError(err error, wrapFlag bool, depth int, opts ...ErrorContextFunc) err
 	return we
 }
 
-//WithContext function returns ErrorContextFunc function value.
-//This function is used in New and Wrap functions that represents context (key/value) data.
+// WithContext function returns ErrorContextFunc function value.
+// This function is used in New and Wrap functions that represents context (key/value) data.
 func WithContext(name string, value interface{}) ErrorContextFunc {
 	return func(e *Error) {
 		_ = e.SetContext(name, value)
 	}
 }
 
-//WithCause function returns ErrorContextFunc function value.
-//This function is used in New and Wrap functions that represents context (key/value) data.
+// WithCause function returns ErrorContextFunc function value.
+// This function is used in New and Wrap functions that represents context (key/value) data.
 func WithCause(err error) ErrorContextFunc {
 	return func(e *Error) {
 		_ = e.SetCause(err)
 	}
 }
 
-//SetContext method sets context information
+// SetContext method sets context information
 func (e *Error) SetContext(name string, value interface{}) *Error {
 	if e == nil {
 		return e
@@ -93,7 +93,7 @@ func (e *Error) SetContext(name string, value interface{}) *Error {
 	return e
 }
 
-//SetCause method sets cause error instance
+// SetCause method sets cause error instance
 func (e *Error) SetCause(err error) *Error {
 	if e == nil {
 		return e
@@ -102,8 +102,8 @@ func (e *Error) SetCause(err error) *Error {
 	return e
 }
 
-//Unwrap method returns cause error in Error instance.
-//This method is used in errors.Unwrap function.
+// Unwrap method returns cause error in Error instance.
+// This method is used in errors.Unwrap function.
 func (e *Error) Unwrap() error {
 	if e == nil {
 		return nil
@@ -117,8 +117,8 @@ func (e *Error) Unwrap() error {
 	return e.Cause
 }
 
-//Is method reports whether any error in error's chain matches cause of target error.
-//This method is used in errors.Is function.
+// Is method reports whether any error in error's chain matches cause of target error.
+// This method is used in errors.Is function.
 func (e *Error) Is(target error) bool {
 	if e == target {
 		return true
@@ -130,16 +130,12 @@ func (e *Error) Is(target error) bool {
 		if errors.Is(e.Cause, target) {
 			return true
 		}
-		cause := Cause(target)
-		if cause != nil && cause != target && errors.Is(e, cause) {
-			return true
-		}
 	}
 	return false
 }
 
-//Error method returns error message.
-//This method is a implementation of error interface.
+// Error method returns error message.
+// This method is a implementation of error interface.
 func (e *Error) Error() string {
 	if e == nil {
 		return nilAngleString
@@ -153,14 +149,14 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%v: %v", e.Err, e.Cause)
 }
 
-//String method returns error message.
-//This method is a implementation of fmt.Stringer interface.
+// String method returns error message.
+// This method is a implementation of fmt.Stringer interface.
 func (e *Error) String() string {
 	return e.Error()
 }
 
-//GoString method returns serialize string of Error.
-//This method is a implementation of fmt.GoStringer interface.
+// GoString method returns serialize string of Error.
+// This method is a implementation of fmt.GoStringer interface.
 func (e *Error) GoString() string {
 	if e == nil {
 		return nilAngleString
@@ -168,13 +164,13 @@ func (e *Error) GoString() string {
 	return fmt.Sprintf("%T{Err:%#v, Cause:%#v, Context:%#v}", e, e.Err, e.Cause, e.Context)
 }
 
-//MarshalJSON method returns serialize string of Error with JSON format.
-//This method is implementation of json.Marshaler interface.
+// MarshalJSON method returns serialize string of Error with JSON format.
+// This method is implementation of json.Marshaler interface.
 func (e *Error) MarshalJSON() ([]byte, error) {
 	return []byte(e.EncodeJSON()), nil
 }
 
-//EncodeJSON method returns serialize string of Error with JSON format.
+// EncodeJSON method returns serialize string of Error with JSON format.
 func (e *Error) EncodeJSON() string {
 	if e == nil {
 		return "null"
@@ -195,8 +191,8 @@ func (e *Error) EncodeJSON() string {
 	return "{" + strings.Join(elms, ",") + "}"
 }
 
-//Format method returns formatted string of Error instance.
-//This method is a implementation of fmt.Formatter interface.
+// Format method returns formatted string of Error instance.
+// This method is a implementation of fmt.Formatter interface.
 func (e *Error) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
@@ -215,19 +211,23 @@ func (e *Error) Format(s fmt.State, verb rune) {
 	}
 }
 
-//Cause function finds cause error in target error instance.
-func Cause(err error) error {
-	for err != nil {
-		unwraped := errors.Unwrap(err)
-		if unwraped == nil {
-			return err
+// Unwraps function finds cause errors ([]error slice) in target error instance.
+func Unwraps(err error) []error {
+	if err != nil {
+		if es, ok := err.(interface {
+			Unwrap() []error
+		}); ok {
+			return es.Unwrap()
 		}
-		err = unwraped
 	}
-	return err
+	e := errors.Unwrap(err)
+	if e != nil {
+		return []error{e}
+	}
+	return nil
 }
 
-//caller returns caller info.
+// caller returns caller info.
 func caller(depth int) (string, string, int) {
 	pc, src, line, ok := runtime.Caller(depth + 1)
 	if !ok {
@@ -236,7 +236,7 @@ func caller(depth int) (string, string, int) {
 	return runtime.FuncForPC(pc).Name(), src, line
 }
 
-//EncodeJSON function dumps out error instance with JSON format.
+// EncodeJSON function dumps out error instance with JSON format.
 func EncodeJSON(err error) string {
 	if e, ok := err.(*Error); ok {
 		return e.EncodeJSON()
@@ -260,9 +260,21 @@ func encodeJSON(err error) string {
 	msgBuf := &bytes.Buffer{}
 	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%q`, err.Error())))
 	elms = append(elms, msgBuf.String())
-	unwraped := errors.Unwrap(err)
-	if unwraped != nil {
-		elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(unwraped)))
+	switch x := err.(type) {
+	case interface{ Unwrap() error }:
+		unwraped := x.Unwrap()
+		if err != nil {
+			elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(unwraped)))
+		}
+	case interface{ Unwrap() []error }:
+		unwraped := x.Unwrap()
+		if len(unwraped) > 0 {
+			causes := []string{}
+			for _, c := range unwraped {
+				causes = append(causes, EncodeJSON(c))
+			}
+			elms = append(elms, fmt.Sprintf(`"Cause":[%s]`, strings.Join(causes, ",")))
+		}
 	}
 	return "{" + strings.Join(elms, ",") + "}"
 }
@@ -276,7 +288,7 @@ func As(err error, target interface{}) bool { return errors.As(err, target) }
 // Unwrap is conpatible with errors.Unwrap.
 func Unwrap(err error) error { return errors.Unwrap(err) }
 
-/* Copyright 2019-2021 Spiegel
+/* Copyright 2019-2023 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
