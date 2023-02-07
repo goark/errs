@@ -211,6 +211,20 @@ func (e *Error) Format(s fmt.State, verb rune) {
 	}
 }
 
+// Cause function finds cause error in target error instance.
+//
+// Deprecated: should not be used
+func Cause(err error) error {
+	for err != nil {
+		unwraped := errors.Unwrap(err)
+		if unwraped == nil {
+			return err
+		}
+		err = unwraped
+	}
+	return err
+}
+
 // Unwraps function finds cause errors ([]error slice) in target error instance.
 func Unwraps(err error) []error {
 	if err != nil {
