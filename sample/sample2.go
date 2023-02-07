@@ -25,9 +25,8 @@ func checkFileOpen(path string) error {
 
 func main() {
 	if err := checkFileOpen("not-exist.txt"); err != nil {
-		fmt.Printf("%v\n", err)             // open not-exist.txt: no such file or directory
-		fmt.Printf("%#v\n", err)            // *errs.Error{Err:&fs.PathError{Op:"open", Path:"not-exist.txt", Err:0x2}, Cause:<nil>, Context:map[string]interface {}{"function":"main.checkFileOpen", "path":"not-exist.txt"}}
-		fmt.Printf("%+v\n", err)            // {"Type":"*errs.Error","Err":{"Type":"*fs.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}},"Context":{"function":"main.checkFileOpen","path":"not-exist.txt"}}
-		fmt.Printf("%v\n", errs.Cause(err)) // no such file or directory
+		fmt.Printf("%v\n", err)  // open not-exist.txt: no such file or directory
+		fmt.Printf("%#v\n", err) // *errs.Error{Err:&fs.PathError{Op:"open", Path:"not-exist.txt", Err:0x2}, Cause:<nil>, Context:map[string]interface {}{"function":"main.checkFileOpen", "path":"not-exist.txt"}}
+		fmt.Printf("%+v\n", err) // {"Type":"*errs.Error","Err":{"Type":"*fs.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}},"Context":{"function":"main.checkFileOpen","path":"not-exist.txt"}}
 	}
 }
