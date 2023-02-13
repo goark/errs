@@ -227,15 +227,15 @@ func Cause(err error) error {
 
 // Unwraps function finds cause errors ([]error slice) in target error instance.
 func Unwraps(err error) []error {
-	if err != nil {
-		if es, ok := err.(interface {
-			Unwrap() []error
-		}); ok {
-			return es.Unwrap()
-		}
+	if err == nil {
+		return nil
 	}
-	e := errors.Unwrap(err)
-	if e != nil {
+	if es, ok := err.(interface {
+		Unwrap() []error
+	}); ok {
+		return es.Unwrap()
+	}
+	if e := errors.Unwrap(err); e != nil {
 		return []error{e}
 	}
 	return nil

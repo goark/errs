@@ -423,6 +423,30 @@ func TestUnwrap(t *testing.T) {
 	}
 }
 
+func TestUnwraps(t *testing.T) {
+	testCases := []struct {
+		err      error
+		unwraped []error
+	}{
+		{err: nil, unwraped: nil},
+		{err: os.ErrInvalid, unwraped: nil},
+		{err: Wrap(os.ErrInvalid), unwraped: []error{os.ErrInvalid}},
+		{err: errors.Join(syscall.ENOENT, os.ErrInvalid), unwraped: []error{syscall.ENOENT, os.ErrInvalid}},
+	}
+
+	for _, tc := range testCases {
+		got := Unwraps(tc.err)
+		if len(got) != len(tc.unwraped) {
+			t.Errorf("Unwrap(\"%v\") = \"%v\", want \"%v\"", tc.err, got, tc.unwraped)
+		}
+		for i, e := range tc.unwraped {
+			if e != got[i] {
+				t.Errorf("Unwrap(\"%v\") = \"%v\", want \"%v\"", tc.err, got, tc.unwraped)
+			}
+		}
+	}
+}
+
 /* Copyright 2019-2023 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
