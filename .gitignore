@@ -13,3 +13,5 @@
 
 # Other files and folders
 .task/
+# go.work
+go.work.sum
