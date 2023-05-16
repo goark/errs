@@ -2,6 +2,7 @@ package zapobject
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/goark/errs"
 	"go.uber.org/zap"
@@ -32,9 +33,14 @@ func (e ErrObject) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 			}
 		}
 		if len(ee.Context) > 0 {
+			keys := make([]string, 0, len(ee.Context))
+			for k := range ee.Context {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
 			enc.OpenNamespace("context")
-			for k, v := range ee.Context {
-				_ = enc.AddReflected(k, v)
+			for _, k := range keys {
+				_ = enc.AddReflected(k, ee.Context[k])
 			}
 		}
 	} else {
