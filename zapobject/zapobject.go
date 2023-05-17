@@ -25,8 +25,13 @@ func (e ErrObject) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	}
 	var ee *errs.Error
 	if errs.As(e.Err, &ee) {
-		enc.AddString("type", fmt.Sprintf("%T", ee.Err))
-		enc.AddString("msg", ee.Err.Error())
+		enc.AddString("type", fmt.Sprintf("%T", ee))
+		enc.AddString("msg", ee.Error())
+		if ee.Err != nil {
+			if err := enc.AddObject("error", New(ee.Err)); err != nil {
+				return err
+			}
+		}
 		if ee.Cause != nil {
 			if err := enc.AddObject("cause", New(ee.Cause)); err != nil {
 				return err
