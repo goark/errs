@@ -30,5 +30,5 @@ func Example() {
 		logger.Error("err", zap.Object("error", zapobject.New(err)))
 	}
 	// Output:
-	// {"level":"error","msg":"err","error":{"type":"*errors.errorString","msg":"file open error","cause":{"type":"*fs.PathError","msg":"open not-exist.txt: no such file or directory","cause":{"type":"syscall.Errno","msg":"no such file or directory"}},"context":{"function":"github.com/goark/errs/zapobject_test.checkFileOpen","path":"not-exist.txt"}}}
+	// {"level":"error","msg":"err","error":{"type":"*errs.Error","msg":"file open error: open not-exist.txt: no such file or directory","error":{"type":"*errors.errorString","msg":"file open error"},"cause":{"type":"*fs.PathError","msg":"open not-exist.txt: no such file or directory","cause":{"type":"syscall.Errno","msg":"no such file or directory"}},"context":{"function":"github.com/goark/errs/zapobject_test.checkFileOpen","path":"not-exist.txt"}}}
 }
