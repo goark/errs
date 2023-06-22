@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -140,13 +141,18 @@ func (e *Error) Error() string {
 	if e == nil {
 		return nilAngleString
 	}
-	if e.Cause == nil {
-		return e.Err.Error()
+	errMsg := e.Err.Error()
+	var causeMsg string
+	if e.Cause != nil {
+		causeMsg = e.Cause.Error()
 	}
-	if len(e.Err.Error()) == 0 {
-		return e.Cause.Error()
+	if len(causeMsg) == 0 {
+		return errMsg
 	}
-	return fmt.Sprintf("%v: %v", e.Err, e.Cause)
+	if len(errMsg) == 0 {
+		return causeMsg
+	}
+	return strings.Join([]string{errMsg, causeMsg}, ": ")
 }
 
 // String method returns error message.
@@ -176,19 +182,19 @@ func (e *Error) EncodeJSON() string {
 		return "null"
 	}
 	elms := []string{}
-	elms = append(elms, fmt.Sprintf(`"Type":%q`, fmt.Sprintf("%T", e)))
+	elms = append(elms, strings.Join([]string{`"Type":`, strconv.Quote(reflect.TypeOf(e).String())}, ""))
 	msgBuf := &bytes.Buffer{}
-	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Err":%s`, EncodeJSON(e.Err))))
+	json.HTMLEscape(msgBuf, bytes.Join([][]byte{[]byte(`"Err":`), []byte(EncodeJSON(e.Err))}, []byte{}))
 	elms = append(elms, msgBuf.String())
 	if len(e.Context) > 0 {
 		if b, err := json.Marshal(e.Context); err == nil {
-			elms = append(elms, fmt.Sprintf(`"Context":%s`, string(b)))
+			elms = append(elms, string(bytes.Join([][]byte{[]byte(`"Context":`), b}, []byte{})))
 		}
 	}
 	if e.Cause != nil && !reflect.ValueOf(e.Cause).IsZero() {
-		elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(e.Cause)))
+		elms = append(elms, strings.Join([]string{`"Cause":`, EncodeJSON(e.Cause)}, ""))
 	}
-	return "{" + strings.Join(elms, ",") + "}"
+	return strings.Join([]string{"{", strings.Join(elms, ","), "}"}, "")
 }
 
 // Format method returns formatted string of Error instance.
@@ -270,15 +276,15 @@ func encodeJSON(err error) string {
 		return "null"
 	}
 	elms := []string{}
-	elms = append(elms, fmt.Sprintf(`"Type":%q`, fmt.Sprintf("%T", err)))
+	elms = append(elms, strings.Join([]string{`"Type":`, strconv.Quote(reflect.TypeOf(err).String())}, ""))
 	msgBuf := &bytes.Buffer{}
-	json.HTMLEscape(msgBuf, []byte(fmt.Sprintf(`"Msg":%q`, err.Error())))
+	json.HTMLEscape(msgBuf, bytes.Join([][]byte{[]byte(`"Msg":`), []byte(strconv.Quote(err.Error()))}, []byte{}))
 	elms = append(elms, msgBuf.String())
 	switch x := err.(type) {
 	case interface{ Unwrap() error }:
 		unwraped := x.Unwrap()
 		if err != nil {
-			elms = append(elms, fmt.Sprintf(`"Cause":%s`, EncodeJSON(unwraped)))
+			elms = append(elms, strings.Join([]string{`"Cause":`, EncodeJSON(unwraped)}, ""))
 		}
 	case interface{ Unwrap() []error }:
 		unwraped := x.Unwrap()
@@ -287,10 +293,10 @@ func encodeJSON(err error) string {
 			for _, c := range unwraped {
 				causes = append(causes, EncodeJSON(c))
 			}
-			elms = append(elms, fmt.Sprintf(`"Cause":[%s]`, strings.Join(causes, ",")))
+			elms = append(elms, strings.Join([]string{`"Cause":[`, strings.Join(causes, ","), "]"}, ""))
 		}
 	}
-	return "{" + strings.Join(elms, ",") + "}"
+	return strings.Join([]string{"{", strings.Join(elms, ","), "}"}, "")
 }
 
 // Is is conpatible with errors.Is.
