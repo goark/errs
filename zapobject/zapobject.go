@@ -56,8 +56,8 @@ func (e ErrObject) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 				return enc.AddObject("cause", New(errList[0]))
 			}
 			elist := make([]ErrObject, 0, len(errList))
-			for i, e := range errList {
-				elist[i] = New(e)
+			for _, e := range errList {
+				elist = append(elist, New(e))
 			}
 			zap.Objects("causes", elist).AddTo(enc)
 		}

@@ -1,8 +1,10 @@
 package errs_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/goark/errs"
 )
@@ -36,7 +38,39 @@ func ExampleEncodeJSON() {
 	// {"Type":"*fs.PathError","Msg":"open not-exist.txt: no such file or directory","Cause":{"Type":"syscall.Errno","Msg":"no such file or directory"}}
 }
 
-/* Copyright 2019-2021 Spiegel
+func ExampleJoin() {
+	err := errs.Join(errors.New("error 1"), errors.New("error 2"))
+	fmt.Println(err)
+	errlist, ok := err.(*errs.Errors)
+	if !ok {
+		return
+	}
+	errlist.Add(errors.New("error 3"))
+	fmt.Printf("%+v\n", errlist.ErrorOrNil())
+	// Output:
+	// error 1
+	// error 2
+	// {"Type":"*errs.Errors","Errs":[{"Type":"*errors.errorString","Msg":"error 1"},{"Type":"*errors.errorString","Msg":"error 2"},{"Type":"*errors.errorString","Msg":"error 3"}]}
+}
+
+func ExampleErrors() {
+	errlist := &errs.Errors{}
+	var wg sync.WaitGroup
+	for i := 1; i <= 100000; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errlist.Add(fmt.Errorf("error %d", i))
+		}()
+	}
+	wg.Wait()
+	fmt.Println("error ount =", len(errlist.Unwrap()))
+	// Output:
+	// error ount = 100000
+}
+
+/* Copyright 2019-2023 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
