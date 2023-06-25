@@ -7,17 +7,29 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	"sync"
 
 	"github.com/goark/errs"
 )
 
 func generateMultiError() error {
-	return errs.Wrap(errors.Join(os.ErrInvalid, io.EOF))
+	errlist := &errs.Errors{}
+	var wg sync.WaitGroup
+	for i := 1; i <= 2; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errlist.Add(fmt.Errorf("error %d", i))
+		}()
+	}
+	wg.Wait()
+	errlist.Add(io.EOF)
+	return errlist.ErrorOrNil()
 }
 
 func main() {
 	err := generateMultiError()
-	fmt.Printf("%+v\n", err)            // {"Type":"*errs.Error","Err":{"Type":"*errors.joinError","Msg":"invalid argument\nEOF","Cause":[{"Type":"*errors.errorString","Msg":"invalid argument"},{"Type":"*errors.errorString","Msg":"EOF"}]},"Context":{"function":"main.generateMultiError"}}
+	fmt.Printf("%+v\n", err)            // {"Type":"*errs.Errors","Errs":[{"Type":"*errors.errorString","Msg":"error 2"},{"Type":"*errors.errorString","Msg":"error 1"},{"Type":"*errors.errorString","Msg":"EOF"}]}
 	fmt.Println(errors.Is(err, io.EOF)) // true
 }
