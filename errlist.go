@@ -30,14 +30,13 @@ func Join(errlist ...error) error {
 	if ct == 0 {
 		return nil
 	}
-	el := &Errors{Errs: make([]error, 0, ct)}
+	es := &Errors{Errs: make([]error, 0, ct)}
 	for _, err := range errlist {
 		if err != nil {
-			el.Errs = append(el.Errs, err)
-			ct++
+			es.Errs = append(es.Errs, err)
 		}
 	}
-	return el
+	return es
 }
 
 // Add method adds errors to Errors.
@@ -47,12 +46,21 @@ func (es *Errors) Add(errlist ...error) {
 	}
 	es.mu.Lock()
 	defer es.mu.Unlock()
-	es.Errs = append(es.Errs, errlist...)
+	for _, err := range errlist {
+		if err != nil {
+			es.Errs = append(es.Errs, err)
+		}
+	}
 }
 
 // ErrorOrNil method returns this as a error type.
 func (es *Errors) ErrorOrNil() error {
-	if es == nil || len(es.Errs) == 0 {
+	if es == nil {
+		return nil
+	}
+	es.mu.RLock()
+	defer es.mu.RUnlock()
+	if len(es.Errs) == 0 {
 		return nil
 	}
 	return es
@@ -61,11 +69,14 @@ func (es *Errors) ErrorOrNil() error {
 // Error method returns error message.
 // This method is a implementation of error interface.
 func (es *Errors) Error() string {
-	if es == nil || len(es.Errs) == 0 {
+	if es == nil {
 		return nilAngleString
 	}
 	es.mu.RLock()
 	defer es.mu.RUnlock()
+	if len(es.Errs) == 0 {
+		return nilAngleString
+	}
 	var b []byte
 	for i, err := range es.Errs {
 		if i > 0 {
@@ -85,11 +96,14 @@ func (es *Errors) String() string {
 // GoString method returns serialize string of Errors.
 // This method is a implementation of fmt.GoStringer interface.
 func (es *Errors) GoString() string {
-	if es == nil || len(es.Errs) == 0 {
+	if es == nil {
 		return nilAngleString
 	}
 	es.mu.RLock()
 	defer es.mu.RUnlock()
+	if len(es.Errs) == 0 {
+		return nilAngleString
+	}
 	return fmt.Sprintf("%T{Errs:%#v}", es, es.Errs)
 }
 
