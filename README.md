@@ -6,7 +6,7 @@
 [![GitHub release](http://img.shields.io/github/release/goark/errs.svg)](https://github.com/goark/errs/releases/latest)
 
 Package [errs] implements functions to manipulate error instances.
-This package is required Go 1.13 or later.
+This package is required Go 1.20 or later.
 
 **Migrated repository to [github.com/goark/errs][errs]**
 
