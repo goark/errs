@@ -13,7 +13,7 @@ import (
 // Errors is multiple error instance.
 type Errors struct {
 	mu   sync.RWMutex
-	Errs []error
+	errs []error
 }
 
 // Join function returns Errors instance.
@@ -30,10 +30,10 @@ func Join(errlist ...error) error {
 	if ct == 0 {
 		return nil
 	}
-	es := &Errors{Errs: make([]error, 0, ct)}
+	es := &Errors{errs: make([]error, 0, ct)}
 	for _, err := range errlist {
 		if err != nil {
-			es.Errs = append(es.Errs, err)
+			es.errs = append(es.errs, err)
 		}
 	}
 	return es
@@ -48,7 +48,7 @@ func (es *Errors) Add(errlist ...error) {
 	defer es.mu.Unlock()
 	for _, err := range errlist {
 		if err != nil {
-			es.Errs = append(es.Errs, err)
+			es.errs = append(es.errs, err)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func (es *Errors) ErrorOrNil() error {
 	}
 	es.mu.RLock()
 	defer es.mu.RUnlock()
-	if len(es.Errs) == 0 {
+	if len(es.errs) == 0 {
 		return nil
 	}
 	return es
@@ -74,11 +74,11 @@ func (es *Errors) Error() string {
 	}
 	es.mu.RLock()
 	defer es.mu.RUnlock()
-	if len(es.Errs) == 0 {
+	if len(es.errs) == 0 {
 		return nilAngleString
 	}
 	var b []byte
-	for i, err := range es.Errs {
+	for i, err := range es.errs {
 		if i > 0 {
 			b = append(b, '\n')
 		}
@@ -101,10 +101,10 @@ func (es *Errors) GoString() string {
 	}
 	es.mu.RLock()
 	defer es.mu.RUnlock()
-	if len(es.Errs) == 0 {
+	if len(es.errs) == 0 {
 		return nilAngleString
 	}
-	return fmt.Sprintf("%T{Errs:%#v}", es, es.Errs)
+	return fmt.Sprintf("%T{Errs:%#v}", es, es.errs)
 }
 
 // MarshalJSON method returns serialize string of Errors with JSON format.
@@ -142,9 +142,9 @@ func (es *Errors) EncodeJSON() string {
 	defer es.mu.RUnlock()
 	elms := []string{}
 	elms = append(elms, strings.Join([]string{`"Type":`, strconv.Quote(reflect.TypeOf(es).String())}, ""))
-	if len(es.Errs) > 0 {
+	if len(es.errs) > 0 {
 		elms2 := []string{}
-		for _, err := range es.Errs {
+		for _, err := range es.errs {
 			msgBuf := &bytes.Buffer{}
 			json.HTMLEscape(msgBuf, []byte(EncodeJSON(err)))
 			elms2 = append(elms2, msgBuf.String())
@@ -162,10 +162,12 @@ func (es *Errors) Unwrap() []error {
 	}
 	es.mu.RLock()
 	defer es.mu.RUnlock()
-	if len(es.Errs) == 0 {
+	if len(es.errs) == 0 {
 		return nil
 	}
-	return es.Errs
+	cpy := make([]error, len(es.errs), cap(es.errs))
+	copy(cpy, es.errs)
+	return cpy
 }
 
 /* Copyright 2023 Spiegel
