@@ -142,7 +142,7 @@ func main() {
 }
 ```
 
-### Wrapping multiple errors instance
+### Handling multiple errors
 
 ```go
 package main
@@ -151,6 +151,27 @@ import (
     "errors"
     "fmt"
     "io"
+    "os"
+
+    "github.com/goark/errs"
+)
+
+func generateMultiError() error {
+    return errs.Join(os.ErrInvalid, io.EOF)
+}
+
+func main() {
+    err := generateMultiError()
+    fmt.Printf("%+v\n", err)            // {"Type":"*errs.Errors","Errs":[{"Type":"*errors.errorString","Msg":"invalid argument"},{"Type":"*errors.errorString","Msg":"EOF"}]}
+    fmt.Println(errors.Is(err, io.EOF)) // true
+}
+```
+
+```go
+package main
+
+import (
+    "fmt"
     "sync"
 
     "github.com/goark/errs"
@@ -168,14 +189,12 @@ func generateMultiError() error {
         }()
     }
     wg.Wait()
-    errlist.Add(io.EOF)
     return errlist.ErrorOrNil()
 }
 
 func main() {
     err := generateMultiError()
-    fmt.Printf("%+v\n", err)            // {"Type":"*errs.Errors","Errs":[{"Type":"*errors.errorString","Msg":"error 2"},{"Type":"*errors.errorString","Msg":"error 1"},{"Type":"*errors.errorString","Msg":"EOF"}]}
-    fmt.Println(errors.Is(err, io.EOF)) // true
+    fmt.Printf("%+v\n", err) // {"Type":"*errs.Errors","Errs":[{"Type":"*errors.errorString","Msg":"error 2"},{"Type":"*errors.errorString","Msg":"error 1"}]}
 }
 ```
 
