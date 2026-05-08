@@ -129,7 +129,7 @@ func (es *Errors) Format(s fmt.State, verb rune) {
 	case 's':
 		_, _ = strings.NewReader(es.String()).WriteTo(s)
 	default:
-		fmt.Fprintf(s, `%%!%c(%s)`, verb, es.GoString())
+		_, _ = fmt.Fprintf(s, `%%!%c(%s)`, verb, es.GoString())
 	}
 }
 

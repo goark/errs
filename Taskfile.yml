@@ -6,7 +6,8 @@ tasks:
       - task: errs
       - task: zapobject
       - task: test
-      - task: nancy
+      - task: govulncheck
+      # - task: nancy
 
   test:
     desc: Test and lint.
@@ -15,7 +16,15 @@ tasks:
       - go test -shuffle on ./zapobject/...
       - govulncheck ./...
       - govulncheck ./zapobject/...
-      - docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint:v1.51.1 golangci-lint run --enable gosec --timeout 3m0s ./...
+      - golangci-lint-v2 run --enable gosec --timeout 3m0s ./...
+    sources:
+      - ./go.mod
+      - '**/*.go'
+
+  govulncheck:
+    desc: Check reachable vulnerabilities with latest govulncheck.
+    cmds:
+      - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
     sources:
       - ./go.mod
       - '**/*.go'
