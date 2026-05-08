@@ -213,7 +213,7 @@ func (e *Error) Format(s fmt.State, verb rune) {
 	case 's':
 		_, _ = strings.NewReader(e.String()).WriteTo(s)
 	default:
-		fmt.Fprintf(s, `%%!%c(%s)`, verb, e.GoString())
+		_, _ = fmt.Fprintf(s, `%%!%c(%s)`, verb, e.GoString())
 	}
 }
 
@@ -283,7 +283,7 @@ func encodeJSON(err error) string {
 	switch x := err.(type) {
 	case interface{ Unwrap() error }:
 		unwraped := x.Unwrap()
-		if err != nil {
+		if unwraped != nil {
 			elms = append(elms, strings.Join([]string{`"Cause":`, EncodeJSON(unwraped)}, ""))
 		}
 	case interface{ Unwrap() []error }:

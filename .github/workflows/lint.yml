@@ -14,12 +14,12 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
           # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
           version: latest
@@ -44,11 +44,7 @@ jobs:
           # skip-build-cache: true
       - name: testing
         run: go test -shuffle on ./...
-      - name: testing pgdrv
-        run: go test -shuffle on ./zapobject/...
       - name: install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - name: running govulncheck in errs
+      - name: running govulncheck
         run: govulncheck ./...
-      - name: running govulncheck in zapobject
-        run: govulncheck ./zapobject/...
