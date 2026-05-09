@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-lint:
+    name: lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: |
+            go.sum
+            zapobject/go.sum
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --enable gosec
+
+      - name: Test root module
+        run: go test -shuffle on ./...
+
+      - name: Test zapobject module
+        working-directory: zapobject
+        run: go test -shuffle on ./...
+
+  govulncheck-root:
+    name: govulncheck (root)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run govulncheck for root module
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-file: go.mod
+          go-package: ./...
+          repo-checkout: false
+
+  govulncheck-zapobject:
+    name: govulncheck (zapobject)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run govulncheck for zapobject module
+        uses: golang/govulncheck-action@v1
+        with:
+          work-dir: zapobject
+          go-version-file: go.mod
+          go-package: ./...
+          repo-checkout: false
