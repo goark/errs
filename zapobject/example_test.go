@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func checkFileOpen(path string) error {
+func checkFileOpen(path string) (retErr error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return errs.New(
@@ -19,7 +19,15 @@ func checkFileOpen(path string) error {
 			errs.WithContext("path", path),
 		)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			closeErr := errs.Wrap(
+				err,
+				errs.WithContext("path", path),
+			)
+			retErr = errs.Join(retErr, closeErr)
+		}
+	}()
 
 	return nil
 }
@@ -41,7 +49,7 @@ func generateMultiError() error {
 
 func Example() {
 	logger := zap.NewExample()
-	defer logger.Sync()
+	defer func() { _ = logger.Sync() }()
 
 	if err := checkFileOpen("not-exist.txt"); err != nil {
 		logger.Error("err", zap.Object("error", zapobject.New(err)))

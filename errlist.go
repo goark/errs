@@ -17,6 +17,8 @@ type Errors struct {
 }
 
 // Join function returns Errors instance.
+//
+// Join ignores nil elements in arguments and returns nil if all elements are nil.
 func Join(errlist ...error) error {
 	if len(errlist) == 0 {
 		return nil
