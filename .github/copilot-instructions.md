@@ -36,5 +36,6 @@
 ## API and Compatibility Notes
 - Do not introduce new usage of deprecated `Cause()`; prefer `errors.Is`/`errors.As` compatible flows and `Unwrap`/`Unwraps`.
 - Keep `errs.Join` behavior stable: ignore nil arguments and return nil when all arguments are nil.
+- Keep thread-safety semantics clear: `errs.Errors` is container-safe, but contained error values (including `errs.Error`) are not guaranteed goroutine-safe.
 - Treat changes to exported symbols, function signatures, and observable error formatting behavior as potentially breaking.
 - Error string and JSON formatting are validated by tests; when output behavior changes, update README examples and test expectations in the same change.
