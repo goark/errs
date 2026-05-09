@@ -45,7 +45,9 @@ func (e ErrObject) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 			sort.Strings(keys)
 			enc.OpenNamespace("context")
 			for _, k := range keys {
-				_ = enc.AddReflected(k, ee.Context[k])
+				if err := enc.AddReflected(k, ee.Context[k]); err != nil {
+					return err
+				}
 			}
 		}
 	} else {
