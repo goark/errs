@@ -39,3 +39,21 @@
 - Keep thread-safety semantics clear: `errs.Errors` is container-safe, but contained error values (including `errs.Error`) are not guaranteed goroutine-safe.
 - Treat changes to exported symbols, function signatures, and observable error formatting behavior as potentially breaking.
 - Error string and JSON formatting are validated by tests; when output behavior changes, update README examples and test expectations in the same change.
+
+## Release Process
+- Before tagging, ensure `master` is up to date and clean.
+  - `git fetch origin`
+  - `git pull --ff-only origin master`
+- Run validation before release:
+  - `task test`
+  - `task govulncheck`
+- Create an annotated tag (`vX.Y.Z`) with a release message:
+  - `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+- Push the tag to GitHub:
+  - `git push origin vX.Y.Z`
+- Create the GitHub release for that tag using auto-generated notes:
+  - `gh release create vX.Y.Z --title "vX.Y.Z" --generate-notes`
+- If auto-generated notes are not suitable, use manual notes instead:
+  - `gh release create vX.Y.Z --title "vX.Y.Z" --notes "Release vX.Y.Z"`
+- If needed, update release notes after creation (for example, to add PR numbers):
+  - `gh release edit vX.Y.Z --notes-file <notes-file>`
