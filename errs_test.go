@@ -447,6 +447,26 @@ func TestUnwraps(t *testing.T) {
 	}
 }
 
+func TestErrorWithNilErr(t *testing.T) {
+	testCases := []struct {
+		name string
+		err  *Error
+		want string
+	}{
+		{name: "empty", err: &Error{}, want: "<nil>"},
+		{name: "cause only", err: &Error{Cause: os.ErrInvalid}, want: "invalid argument"},
+		{name: "err and cause", err: &Error{Err: os.ErrNotExist, Cause: os.ErrInvalid}, want: "file does not exist: invalid argument"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.err.Error(); got != tc.want {
+				t.Errorf("Error() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 /* Copyright 2019-2023 Spiegel
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

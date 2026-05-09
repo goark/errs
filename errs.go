@@ -141,12 +141,18 @@ func (e *Error) Error() string {
 	if e == nil {
 		return nilAngleString
 	}
-	errMsg := e.Err.Error()
+	var errMsg string
+	if e.Err != nil {
+		errMsg = e.Err.Error()
+	}
 	var causeMsg string
 	if e.Cause != nil {
 		causeMsg = e.Cause.Error()
 	}
 	if len(causeMsg) == 0 {
+		if len(errMsg) == 0 {
+			return nilAngleString
+		}
 		return errMsg
 	}
 	if len(errMsg) == 0 {
