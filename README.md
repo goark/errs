@@ -82,6 +82,7 @@ For multiple causes, it returns all causes as a slice.
 - `errs.New("")` returns `nil`
 - `errs.Wrap(nil)` returns `nil`
 - If `WithCause` is given multiple times, the last cause is used
+- `errs.Join(...)` ignores `nil` arguments and returns `nil` if all arguments are `nil`
 
 ### Create new error instance with cause
 
