@@ -11,6 +11,9 @@ import (
 )
 
 // Errors is multiple error instance.
+//
+// Errors protects concurrent access to the container itself, but each contained
+// error may still be non-thread-safe.
 type Errors struct {
 	mu   sync.RWMutex
 	errs []error
@@ -167,7 +170,7 @@ func (es *Errors) Unwrap() []error {
 	if len(es.errs) == 0 {
 		return nil
 	}
-	cpy := make([]error, len(es.errs), cap(es.errs))
+	cpy := make([]error, len(es.errs))
 	copy(cpy, es.errs)
 	return cpy
 }

@@ -65,9 +65,9 @@ func ExampleErrors() {
 		}()
 	}
 	wg.Wait()
-	fmt.Println("error ount =", len(errlist.Unwrap()))
+	fmt.Println("error count =", len(errlist.Unwrap()))
 	// Output:
-	// error ount = 100000
+	// error count = 100000
 }
 
 /* Copyright 2019-2023 Spiegel

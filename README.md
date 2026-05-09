@@ -84,6 +84,12 @@ For multiple causes, it returns all causes as a slice.
 - If `WithCause` is given multiple times, the last cause is used
 - `errs.Join(...)` ignores `nil` arguments and returns `nil` if all arguments are `nil`
 
+### Concurrency notes
+
+- `errs.Errors` is goroutine-safe for container operations such as `Add`, `ErrorOrNil`, and `Unwrap`.
+- Errors stored in `errs.Errors` are not guaranteed to be goroutine-safe.
+- `errs.Error` has mutable state (`Context` map), so avoid concurrent mutation while formatting or encoding the same instance.
+
 ### Create new error instance with cause
 
 ```go

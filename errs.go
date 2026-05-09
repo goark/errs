@@ -18,6 +18,9 @@ const (
 
 // Error type is a implementation of error interface.
 // This type is for wrapping cause error instance.
+//
+// Error is not goroutine-safe. Its Context field is a mutable map and can be
+// modified by SetContext or direct field access.
 type Error struct {
 	wrapFlag bool
 	Err      error
